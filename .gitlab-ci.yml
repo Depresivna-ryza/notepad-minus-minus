@@ -1,0 +1,28 @@
+default:
+  tags:
+    - shared-fi
+
+image:
+  name: rust:latest
+
+stages:
+  - lint
+  - test
+  - build
+
+lint:
+  stage: lint
+  before_script:
+    - rustup component add clippy-preview
+  script:
+    - cargo clippy --all-targets --all-features -- -D warnings
+
+test:
+  stage: test
+  script:
+    - cargo test --all-features --
+
+build:
+  stage: build
+  script:
+    - cargo build --release
