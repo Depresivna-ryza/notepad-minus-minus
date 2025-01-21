@@ -1,4 +1,4 @@
-use std::{fs::{read_to_string, File}, path::PathBuf};
+use std::{fs::read_to_string, path::PathBuf};
 
 use dioxus::prelude::*;
 use rfd::FileDialog;
@@ -6,10 +6,8 @@ use tracing::info;
 
 const FAVICON: Asset = asset!("/assets/favicon.ico");
 const MAIN_CSS: Asset = asset!("/assets/main.css");
-const HEADER_SVG: Asset = asset!("/assets/header.svg");
 
-
-static OPENED_TABS: GlobalSignal<Vec<PathBuf>> = Signal::global(|| vec![]);
+static OPENED_TABS: GlobalSignal<Vec<PathBuf>> = Signal::global(Vec::new);
 static CURRENT_FILE: GlobalSignal<Option<PathBuf>> = Signal::global(|| None);
 
 fn main() {
@@ -17,21 +15,11 @@ fn main() {
 }
 
 #[component]
-fn App() -> Element {
-    rsx! {
-        document::Link { rel: "icon", href: FAVICON }
-
-        document::Link { rel: "stylesheet", href: MAIN_CSS }
-
-        Layout {}
-    }
-}
-
-#[component]
 pub fn Layout() -> Element {
-
     rsx! {
+
         document::Link { rel: "icon", href: FAVICON }
+
         document::Link { rel: "stylesheet", href: MAIN_CSS }
 
         div {
@@ -42,7 +30,6 @@ pub fn Layout() -> Element {
 
     }
 }
-
 
 #[component]
 pub fn LeftPanel() -> Element {
@@ -76,9 +63,7 @@ pub fn FileExplorer() -> Element {
             CURRENT_FILE.write().replace(file_path.clone());
             info!("current file changed to: {:?}", file_path);
         }
-
     };
-
 
     rsx! {
         div {
@@ -122,7 +107,7 @@ pub fn Editor() -> Element {
     let current_file = CURRENT_FILE.read().clone();
     let file_content = match current_file {
         Some(file_path) => read_to_string(file_path).unwrap_or("NO FILE".to_string()),
-        None => "NO FILE".to_string()
+        None => "NO FILE".to_string(),
     };
 
     rsx! {
@@ -135,8 +120,17 @@ pub fn Editor() -> Element {
 
 #[component]
 pub fn Tab(file_path: ReadOnlySignal<PathBuf>) -> Element {
-    let file_name_short = use_memo(move || file_path().file_name().unwrap().to_str().unwrap().chars().take(10).collect::<String>());
-    let x = CURRENT_FILE();
+    let file_name_short = use_memo(move || {
+        match file_path().file_name() {
+            None => "Invalid file".to_string(),
+            Some(f) => {
+                match f.to_str() {
+                    None => "Invalid file".to_string(),
+                    Some(s) => s.chars().take(10).collect::<String>(),
+                }
+            }
+        }
+    });
 
     let is_current = use_memo(move || CURRENT_FILE() == Some(file_path()));
 
