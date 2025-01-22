@@ -4,12 +4,22 @@ use itertools::Itertools;
 
 #[derive(PartialEq, Clone, Debug)]
 pub struct FileSystem {
-    pub root: Dir,
+    pub root: Option<Dir>,
 }
 
 impl FileSystem {
-    pub fn new(root: Dir) -> Self {
-        Self { root }
+    pub fn from(root: Dir) -> Self {
+        Self { root: Some(root) }
+    }
+
+    pub fn new() -> Self {
+        Self { root: None }
+    }
+    
+    pub fn find(&mut self, path: &PathBuf)  {
+        if let Some(ref mut root) = self.root {
+            root.find(path);
+        }
     }
 }
 
@@ -24,6 +34,34 @@ impl Dir {
         Self {
             path,
             children: DirectoryItems::ClosedDirectory,
+        }
+    }
+
+    pub fn find(&mut self, path: &PathBuf) {
+        if path == &self.path {
+            self.open_close();
+            return;
+        }
+        if let DirectoryItems::OpenedDirectory(ref mut items) = self.children {
+            for item in items.iter_mut() {
+                match item {
+                    DirectoryItem::Directory(dir) => {
+                        dir.find(path);
+                    }
+                    DirectoryItem::File(file) => {
+                        if file == path {
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    pub fn open_close(&mut self) {
+        match self.children {
+            DirectoryItems::ClosedDirectory => self.open(),
+            DirectoryItems::OpenedDirectory(_) => self.close(),
         }
     }
 
