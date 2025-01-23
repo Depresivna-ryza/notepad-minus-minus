@@ -3,6 +3,7 @@ pub mod models;
 
 use std::path::PathBuf;
 
+use models::tabs::Tabs;
 use views::fileexplorer::FileExplorer;
 use views::sessionexplorer::SessionsExplorer;
 use views::editor::Editor;
@@ -21,8 +22,7 @@ fn main() {
 
 #[component]
 pub fn Layout() -> Element {
-    let opened_tabs: Signal<Vec<PathBuf>> = use_signal(Vec::new);
-    let current_file: Signal<Option<PathBuf>> = use_signal(|| None);
+    let tabs = use_signal(|| Tabs::new()); 
 
     rsx! {
 
@@ -31,8 +31,8 @@ pub fn Layout() -> Element {
 
         div {
             style: "display: flex; flex-direction: row; width: 100vw ; height: 100vh;",
-            LeftPanel {opened_tabs, current_file}
-            RightPanel {opened_tabs, current_file}
+            LeftPanel {tabs}
+            RightPanel {tabs}
         }
 
     }
@@ -40,13 +40,12 @@ pub fn Layout() -> Element {
 
 #[component]
 pub fn LeftPanel(
-    opened_tabs: Signal<Vec<PathBuf>>,
-    current_file: Signal<Option<PathBuf>>,
+    tabs: Signal<Tabs>
 ) -> Element {
     rsx! {
         div {
             style: "display: flex; flex-direction: column; width: 20%; background-color: #eee;",
-            FileExplorer {opened_tabs: opened_tabs, current_file}
+            FileExplorer {tabs}
             SessionsExplorer {}
         }
     }
@@ -54,14 +53,13 @@ pub fn LeftPanel(
 
 #[component]
 pub fn RightPanel(
-    opened_tabs: Signal<Vec<PathBuf>>,
-    current_file: Signal<Option<PathBuf>>,
+    tabs: Signal<Tabs>
 ) -> Element {
     rsx! {
         div {
             style: "display: flex; flex-direction: column; width: 80%; background-color: #ddd;",
-            EditorTabs {opened_tabs, current_file}
-            Editor {current_file}
+            EditorTabs {tabs}
+            Editor {tabs}
         }
     }
 }

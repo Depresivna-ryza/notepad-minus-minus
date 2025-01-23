@@ -1,14 +1,15 @@
 use std::path::PathBuf;
 
-use crate::models::files::{Dir, DirectoryItem, DirectoryItems, FileSystem};
+use crate::models::{files::{Dir, DirectoryItem, DirectoryItems, FileSystem}, tabs::Tabs};
 
 use rfd::FileDialog;
 use tracing::{info};
 use dioxus::prelude::*;
 
 #[component]
-pub fn FileExplorer(opened_tabs: Signal<Vec<PathBuf>>, current_file: Signal<Option<PathBuf>>) -> Element {
+pub fn FileExplorer(tabs: Signal<Tabs>) -> Element {
     let mut file_system_state = use_context_provider(|| Signal::new(FileSystem::new()));
+    use_context_provider(|| tabs.clone());
 
     
     let change_root_directory = move |_| {
@@ -91,7 +92,11 @@ pub fn File(file: PathBuf) -> Element {
     rsx!(
         div {
             onclick: move |_| {
-                info!("File clicked: {:?}", file);
+                info!("File clicked: {:?}", file.clone());
+
+                let mut tabs = use_context::<Signal<Tabs>>();
+                tabs.write().open_tab(file.clone());
+
             },
             style: "color: blue; border: 1px solid blue; margin: 5px 0px 5px 20px;",
             "{file_name}"

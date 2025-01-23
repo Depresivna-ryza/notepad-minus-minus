@@ -1,11 +1,11 @@
 use std::{fs::read_to_string, path::PathBuf};
-use crate::models::text::Text;
+use crate::models::{tabs::Tabs, text::Text};
 
 use dioxus::prelude::*;
 
 #[component]
-pub fn Editor(current_file: ReadOnlySignal<Option<PathBuf>>) -> Element {
-    let file_content: Option<Text> = match current_file() {
+pub fn Editor(tabs: Signal<Tabs>) -> Element {
+    let file_content: Option<Text> = match tabs.read().current_file.clone() {
         Some(file_path) => read_to_string(file_path).ok().map(Text::new),
         None => None,
     };
