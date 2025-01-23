@@ -1,3 +1,3 @@
 pub mod text;
-pub mod tab;
+pub mod tabs;
 pub mod files;
