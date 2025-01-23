@@ -1,4 +1,4 @@
-use std::{cmp::{max, min}, path::PathBuf};
+use std::{cmp::min, path::PathBuf};
 
 #[derive(PartialEq, Clone, Debug)]
 pub struct Tabs {
@@ -42,4 +42,3 @@ impl Tabs {
         self.current_file = Some(path.clone());
     }
 }
-

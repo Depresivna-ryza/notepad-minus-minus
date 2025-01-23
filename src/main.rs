@@ -1,15 +1,13 @@
-pub mod views;
 pub mod models;
+pub mod views;
 
 use models::tabs::Tabs;
+use views::editor::Editor;
 use views::fileexplorer::FileExplorer;
 use views::sessionexplorer::SessionsExplorer;
-use views::editor::Editor;
 use views::tabs::EditorTabs;
 
-
 use dioxus::prelude::*;
-
 
 const FAVICON: Asset = asset!("/assets/favicon.ico");
 const MAIN_CSS: Asset = asset!("/assets/main.css");
@@ -20,7 +18,7 @@ fn main() {
 
 #[component]
 pub fn Layout() -> Element {
-    let tabs = use_signal(|| Tabs::new()); 
+    let tabs = use_signal(Tabs::new);
 
     rsx! {
 
@@ -37,9 +35,7 @@ pub fn Layout() -> Element {
 }
 
 #[component]
-pub fn LeftPanel(
-    tabs: Signal<Tabs>
-) -> Element {
+pub fn LeftPanel(tabs: Signal<Tabs>) -> Element {
     rsx! {
         div {
             style: "display: flex; flex-direction: column; width: 20%; background-color: #eee;",
@@ -50,9 +46,7 @@ pub fn LeftPanel(
 }
 
 #[component]
-pub fn RightPanel(
-    tabs: Signal<Tabs>
-) -> Element {
+pub fn RightPanel(tabs: Signal<Tabs>) -> Element {
     rsx! {
         div {
             style: "display: flex; flex-direction: column; width: 80%; background-color: #ddd;",
@@ -61,5 +55,3 @@ pub fn RightPanel(
         }
     }
 }
-
-

@@ -6,9 +6,7 @@ use tracing::info;
 use crate::models::tabs::Tabs;
 
 #[component]
-pub fn EditorTabs(
-    tabs: Signal<Tabs>
-) -> Element {
+pub fn EditorTabs(tabs: Signal<Tabs>) -> Element {
     rsx! {
         div {
             style: "background-color: pink; max-height: 70px; min-height: 70px; display: flex; overflow-x: auto;",

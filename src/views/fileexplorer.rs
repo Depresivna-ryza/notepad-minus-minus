@@ -1,17 +1,18 @@
 use std::path::PathBuf;
 
-use crate::models::{files::{Dir, DirectoryItem, DirectoryItems, FileSystem}, tabs::Tabs};
+use crate::models::{
+    files::{Dir, DirectoryItem, DirectoryItems, FileSystem},
+    tabs::Tabs,
+};
 
-use rfd::FileDialog;
-use tracing::{info};
 use dioxus::prelude::*;
+use rfd::FileDialog;
 
 #[component]
 pub fn FileExplorer(tabs: Signal<Tabs>) -> Element {
     let mut file_system_state = use_context_provider(|| Signal::new(FileSystem::new()));
-    use_context_provider(|| tabs.clone());
+    use_context_provider(|| tabs);
 
-    
     let change_root_directory = move |_| {
         if let Some(dir_path) = FileDialog::new().pick_folder() {
             let mut root_dir = Dir::new(dir_path);
@@ -19,7 +20,6 @@ pub fn FileExplorer(tabs: Signal<Tabs>) -> Element {
             file_system_state.replace(FileSystem::from(root_dir));
         }
     };
-
 
     rsx! {
         div {
@@ -45,7 +45,6 @@ pub fn FileExplorer(tabs: Signal<Tabs>) -> Element {
 
 #[component]
 pub fn Directory(dir: Dir) -> Element {
-
     let dir_name = dir.path.file_name().unwrap().to_str().unwrap();
 
     let opened_string = match dir.children {
@@ -56,7 +55,7 @@ pub fn Directory(dir: Dir) -> Element {
     rsx!(
         div {
             style: "color: darkred; border: 1px solid darkred; margin: 5px 0px 5px 20px;",
-            a { 
+            a {
                 style: "white-space: nowrap;",
                 onclick: move |_| {
                     info!("File clicked: {:?}", dir.path);
@@ -64,7 +63,7 @@ pub fn Directory(dir: Dir) -> Element {
                     let mut state = use_context::<Signal<FileSystem>>();
                     state.write().find(&dir.path);
                 },
-                " {opened_string} {dir_name} " 
+                " {opened_string} {dir_name} "
             }
             if let DirectoryItems::OpenedDirectory(dir_items) = dir.children {
                 for item in dir_items.iter() {
@@ -81,8 +80,6 @@ pub fn Directory(dir: Dir) -> Element {
             }
         }
     )
-
-
 }
 
 #[component]

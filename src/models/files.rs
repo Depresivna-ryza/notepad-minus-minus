@@ -15,8 +15,8 @@ impl FileSystem {
     pub fn new() -> Self {
         Self { root: None }
     }
-    
-    pub fn find(&mut self, path: &PathBuf)  {
+
+    pub fn find(&mut self, path: &PathBuf) {
         if let Some(ref mut root) = self.root {
             root.find(path);
         }
