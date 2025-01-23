@@ -1,8 +1,6 @@
 pub mod views;
 pub mod models;
 
-use std::path::PathBuf;
-
 use models::tabs::Tabs;
 use views::fileexplorer::FileExplorer;
 use views::sessionexplorer::SessionsExplorer;

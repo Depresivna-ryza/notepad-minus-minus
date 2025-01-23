@@ -1,9 +1,10 @@
 use itertools::Itertools;
 
+#[derive(Debug, Clone, PartialEq)]
 pub struct Text {
     content: Vec<Vec<char>>,
-    caret_line: usize,
-    caret_column: usize,
+    pub caret_line: usize,
+    pub caret_column: usize,
     old_content: Vec<Vec<char>>,
 }
 

@@ -49,8 +49,8 @@ pub fn Directory(dir: Dir) -> Element {
     let dir_name = dir.path.file_name().unwrap().to_str().unwrap();
 
     let opened_string = match dir.children {
-        DirectoryItems::OpenedDirectory(_) => "[-]",
-        DirectoryItems::ClosedDirectory => "[+]",
+        DirectoryItems::OpenedDirectory(_) => "[v]",
+        DirectoryItems::ClosedDirectory => "[>]",
     };
 
     rsx!(
@@ -64,7 +64,7 @@ pub fn Directory(dir: Dir) -> Element {
                     let mut state = use_context::<Signal<FileSystem>>();
                     state.write().find(&dir.path);
                 },
-                "{dir_name}  {opened_string}" 
+                " {opened_string} {dir_name} " 
             }
             if let DirectoryItems::OpenedDirectory(dir_items) = dir.children {
                 for item in dir_items.iter() {

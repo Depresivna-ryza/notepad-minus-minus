@@ -4,8 +4,6 @@ use std::{cmp::{max, min}, path::PathBuf};
 pub struct Tabs {
     pub opened_tabs: Vec<PathBuf>,
     pub current_file: Option<PathBuf>,
-    // tab_history: Vec<PathBuf>,
-    // tab_history_index: Option<usize>,
 }
 
 impl Tabs {
@@ -13,8 +11,6 @@ impl Tabs {
         Self {
             opened_tabs: Vec::new(),
             current_file: None,
-            // tab_history: Vec::new(),
-            // tab_history_index: None,
         }
     }
 
@@ -32,7 +28,11 @@ impl Tabs {
         for (i, tab) in self.opened_tabs.iter().enumerate() {
             if tab == &path {
                 self.opened_tabs.remove(i);
-                self.current_file = self.opened_tabs.get(min(i, self.opened_tabs.len() - 1)).cloned();
+                self.current_file = match self.opened_tabs.len() {
+                    0 => None,
+                    l => self.opened_tabs.get(min(i, l - 1)).cloned(),
+                };
+
                 break;
             }
         }
