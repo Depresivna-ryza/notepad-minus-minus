@@ -25,7 +25,6 @@ impl Text {
     }
 
     fn get_cols(&self, line: usize) -> usize {
-        // self.content.get(line).map(|line| line.len()).unwrap_or(0)
         self.content.get(line).map(|line| line.len()).unwrap()
     }
 
@@ -67,7 +66,5 @@ impl Text {
     pub fn insert_newline(&mut self) {
         let right_part: Vec<char> = self.content[self.caret_line].drain(self.caret_column..).collect();
         self.content.insert(self.caret_line + 1, right_part);
-
     }
- 
 }
