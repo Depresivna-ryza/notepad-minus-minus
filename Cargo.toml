@@ -1,6 +1,32 @@
 [package]
 name = "notepad-minus-minus"
 version = "0.1.0"
+authors = ["Richard Schwarz <521781@mail.muni.cz>"]
 edition = "2021"
 
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
 [dependencies]
+dioxus = { version = "0.6.0", features = [] }
+itertools = "0.14.0"
+rfd = "0.15.2"
+tracing = "0.1.41"
+
+
+[features]
+default = ["desktop"]
+web = ["dioxus/web"]
+desktop = ["dioxus/desktop"]
+mobile = ["dioxus/mobile"]
+
+[profile]
+
+[profile.wasm-dev]
+inherits = "dev"
+opt-level = 1
+
+[profile.server-dev]
+inherits = "dev"
+
+[profile.android-dev]
+inherits = "dev"
