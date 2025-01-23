@@ -11,7 +11,7 @@ pub fn EditorTabs(
 ) -> Element {
     rsx! {
         div {
-            style: "background-color: pink; height: 70px; display: flex; overflow-x: auto;",
+            style: "background-color: pink; max-height: 70px; min-height: 70px; display: flex; overflow-x: auto;",
 
             for tab in tabs.read().opened_tabs.iter() {
                 Tab { file_path: tab.clone(), tabs }
