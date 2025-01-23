@@ -5,12 +5,14 @@ use dioxus::prelude::*;
 
 #[component]
 pub fn Editor(tabs: Signal<Tabs>) -> Element {
-    let file_content: Option<Text> = match tabs.read().current_file.clone() {
-        Some(file_path) => read_to_string(file_path).ok().map(Text::new),
-        None => None,
-    };
+    let text: Signal<Option<Text>> = use_signal( || 
+        match tabs.read().current_file {
+            Some(ref file_path) => read_to_string(file_path).ok().map(Text::new),
+            None => None,
+        }
+    );
 
-    let text = use_signal(|| file_content);
+    // let text = use_signal(|| file_content);
 
     let caret_col = use_memo(move || 
         match text.read().clone() {
@@ -39,8 +41,24 @@ pub fn Editor(tabs: Signal<Tabs>) -> Element {
 
 #[component]
 pub fn EditorText(tabs: Signal<Tabs>, text: Signal<Option<Text>>) -> Element {
+    let current_file = use_memo(move || tabs.read().current_file.clone());
 
-    let Some(text) = text.read().clone() else {
+    let text: Option<Text> = match current_file() {
+        Some(file_path) => read_to_string(file_path).ok().map(Text::new),
+        None => None,
+    };
+
+
+    // let text: Signal<Option<Text>> = use_signal( || 
+    //     match tabs.read().current_file {
+    //         Some(ref file_path) => read_to_string(file_path).ok().map(Text::new),
+    //         None => None,
+    //     }
+    // );
+
+
+    // let Some(ref text) = *text.read() else {
+    let Some(ref text) = text else {
         return rsx!{
             div {
                 style: "background-color: purple; flex: 1; color: red;",
