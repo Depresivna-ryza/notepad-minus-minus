@@ -51,20 +51,40 @@ pub fn Directory(dir: Dir) -> Element {
         DirectoryItems::OpenedDirectory(_) => "[v]",
         DirectoryItems::ClosedDirectory => "[>]",
     };
+    
+    let mut is_menu_open = use_signal(|| false);
+    let mut menu_position = use_signal(|| (0.0, 0.0));
 
     rsx!(
         div {
             style: "color: darkred; border: 1px solid darkred; margin: 5px 0px 5px 20px;",
-            a {
-                style: "white-space: nowrap;",
-                onclick: move |_| {
-                    info!("File clicked: {:?}", dir.path);
+            div {
+                a {
+                    style: "white-space: nowrap;",
+                    onclick: move |_| {
+                        info!("File clicked: {:?}", dir.path);
 
-                    let mut state = use_context::<Signal<FileSystem>>();
-                    state.write().find(&dir.path);
-                },
-                " {opened_string} {dir_name} "
+                        let mut state = use_context::<Signal<FileSystem>>();
+                        state.write().find(&dir.path);
+                    },
+                    " {opened_string} "
+                }
+                
+                a {
+                    style: "white-space: nowrap;",
+                    oncontextmenu: move |event: MouseEvent| {
+                        event.prevent_default();
+                        is_menu_open.set(true);
+                        let coordinates = event.client_coordinates();
+                        menu_position.set((coordinates.x, coordinates.y));
+                    },
+                    " {dir_name} "
+                    if *is_menu_open.read() {
+                        RightClickMenu { is_menu_open, menu_position }
+                    }
+                }
             }
+            
             if let DirectoryItems::OpenedDirectory(dir_items) = dir.children {
                 for item in dir_items.iter() {
                     if let DirectoryItem::Directory(dir) = item {
@@ -78,6 +98,38 @@ pub fn Directory(dir: Dir) -> Element {
                     }
                 }
             }
+        }
+    )
+}
+
+#[component]
+pub fn RightClickMenu(mut is_menu_open: Signal<bool>, menu_position: Signal<(f64, f64)>) -> Element {
+    let mut close_menu = move || {
+        is_menu_open.set(false);
+    };
+
+    info!("Menu position: {:?}", menu_position.read());
+    
+    let menu_position = menu_position.read();
+    
+    rsx!(
+        div {
+            style: "
+                position: absolute;
+                top: {menu_position.1}px;
+                left: {menu_position.0}px;
+                background: white;
+                border: 1px solid black;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                padding: 10px;
+                z-index: 1000;
+            ",
+            onclick: move |_| close_menu(),
+
+            // Menu options
+            p { "Option 1" }
+            p { "Option 2" }
+            p { "Option 3" }
         }
     )
 }
