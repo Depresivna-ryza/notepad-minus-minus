@@ -8,6 +8,25 @@ use crate::models::{
 use dioxus::prelude::*;
 use rfd::{AsyncFileDialog, FileDialog};
 
+#[derive(Clone, Copy)]
+struct RightClickMenuState {
+    is_open: Signal<bool>,
+    position: Signal<(f64, f64)>,
+}
+
+impl RightClickMenuState {
+    pub fn handle_right_click(&mut self, event: MouseEvent) {
+        event.prevent_default();
+        self.is_open.set(true);
+        let coordinates = event.client_coordinates();
+        self.position.set((coordinates.x, coordinates.y));
+    }
+    
+    pub fn close_menu(&mut self) {
+        self.is_open.set(false);
+    }
+}
+
 #[component]
 pub fn FileExplorer(tabs: Signal<Tabs>) -> Element {
     let mut file_system_state = use_context_provider(|| Signal::new(FileSystem::new()));
@@ -46,14 +65,18 @@ pub fn FileExplorer(tabs: Signal<Tabs>) -> Element {
 #[component]
 pub fn Directory(dir: Dir) -> Element {
     let dir_name = dir.path.file_name().unwrap().to_str().unwrap();
+    
+    let right_click_menu_state = use_context_provider(|| RightClickMenuState {
+        is_open: Signal::new(false),
+        position: Signal::new((0.0, 0.0)),
+    });
 
     let opened_string = match dir.children {
         DirectoryItems::OpenedDirectory(_) => "[v]",
         DirectoryItems::ClosedDirectory => "[>]",
     };
-    
-    let mut is_menu_open = use_signal(|| false);
-    let mut menu_position = use_signal(|| (0.0, 0.0));
+
+    let mut right_click_menu_state = use_context::<RightClickMenuState>();
 
     rsx!(
         div {
@@ -73,14 +96,11 @@ pub fn Directory(dir: Dir) -> Element {
                 a {
                     style: "white-space: nowrap;",
                     oncontextmenu: move |event: MouseEvent| {
-                        event.prevent_default();
-                        is_menu_open.set(true);
-                        let coordinates = event.client_coordinates();
-                        menu_position.set((coordinates.x, coordinates.y));
+                        right_click_menu_state.handle_right_click(event);
                     },
                     " {dir_name} "
-                    if *is_menu_open.read() {
-                        RightClickMenu { is_menu_open, menu_position }
+                    if *right_click_menu_state.is_open.read() {
+                        RightClickMenu { directory_item: DirectoryItem::Directory(dir.clone()) }
                     }
                 }
             }
@@ -103,15 +123,51 @@ pub fn Directory(dir: Dir) -> Element {
 }
 
 #[component]
-pub fn RightClickMenu(mut is_menu_open: Signal<bool>, menu_position: Signal<(f64, f64)>) -> Element {
-    let mut close_menu = move || {
-        is_menu_open.set(false);
-    };
+pub fn File(file: PathBuf) -> Element {
+    let file_name = file.file_name().unwrap().to_str().unwrap();
+    
+    let right_click_menu_state = use_context_provider(|| RightClickMenuState {
+        is_open: Signal::new(false),
+        position: Signal::new((0.0, 0.0)),
+    });
+    
+    let mut right_click_menu_state = use_context::<RightClickMenuState>();
 
-    info!("Menu position: {:?}", menu_position.read());
+    rsx!(
+        div {
+            style: "color: blue; border: 1px solid blue; margin: 5px 0px 5px 20px;",
+            
+            onclick: move |_| {
+                info!("File clicked: {:?}", file.clone());
+
+                let mut tabs = use_context::<Signal<Tabs>>();
+                tabs.write().open_tab(file.clone());
+
+            },
+            
+            oncontextmenu: move |event: MouseEvent| {
+                right_click_menu_state.handle_right_click(event);
+            },
+            
+            "{file_name}"
+            
+            if *right_click_menu_state.is_open.read() {
+                RightClickMenu { directory_item: DirectoryItem::File(file.clone()) }
+            }
+        }
+    )
+}
+
+#[component]
+pub fn RightClickMenu(directory_item: DirectoryItem) -> Element {
+    let mut right_click_menu_state = use_context::<RightClickMenuState>();
+
+    info!("Menu position: {:?}", right_click_menu_state.position.read());
     
-    let menu_position = menu_position.read();
-    
+    info!("Directory item: {:?}", directory_item);
+
+    let menu_position = right_click_menu_state.position.read();
+
     rsx!(
         div {
             style: "
@@ -124,31 +180,17 @@ pub fn RightClickMenu(mut is_menu_open: Signal<bool>, menu_position: Signal<(f64
                 padding: 10px;
                 z-index: 1000;
             ",
-            onclick: move |_| close_menu(),
-
-            // Menu options
-            p { "Option 1" }
-            p { "Option 2" }
-            p { "Option 3" }
-        }
-    )
-}
-
-#[component]
-pub fn File(file: PathBuf) -> Element {
-    let file_name = file.file_name().unwrap().to_str().unwrap();
-
-    rsx!(
-        div {
+            
             onclick: move |_| {
-                info!("File clicked: {:?}", file.clone());
-
-                let mut tabs = use_context::<Signal<Tabs>>();
-                tabs.write().open_tab(file.clone());
-
+                right_click_menu_state.close_menu();
             },
-            style: "color: blue; border: 1px solid blue; margin: 5px 0px 5px 20px;",
-            "{file_name}"
+
+            if let DirectoryItem::Directory(_) = directory_item {
+                p { button { "Create new directory" } }
+                p { button { "Create new file" } }
+            }
+            p { button { "Delete" } }
+            p { button { "Rename" } }
         }
     )
 }
