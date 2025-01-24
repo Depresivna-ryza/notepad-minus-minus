@@ -7,6 +7,7 @@ use crate::models::{
 
 use dioxus::prelude::*;
 use rfd::FileDialog;
+use tracing::info;
 
 #[component]
 pub fn FileExplorer(tabs: Signal<Tabs>) -> Element {
