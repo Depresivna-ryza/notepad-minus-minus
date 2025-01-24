@@ -24,7 +24,7 @@ pub fn Editor(tabs: Signal<Tabs>) -> Element {
 
     rsx! {
         div {
-            style: "display: flex; flex-direction: column; flex: 1; justify-content: space-between; height: 10px;",
+            style: "display: flex; flex-direction: column; overflow: hidden; flex: 1;",
             TopStatusBar {tabs, text},
             EditorText {tabs, text},
             BottomStatusBar {tabs, caret_col: caret_col(), caret_line: caret_line()}
@@ -60,7 +60,11 @@ pub fn EditorText(tabs: Signal<Tabs>, text: Signal<Option<Text>>) -> Element {
 
     rsx! {
         div {
-            style: "background-color: purple; flex: 1; overflow-y: auto; flex: 1;",
+            autofocus: true,
+            onfocus: |_| {
+                println!("RightPanel focused");
+            },
+            style: "background-color: purple; display: flex; overflow-y: scroll; flex: 1;",
             ul {
                 style: "padding: 0;",
                 for text_line in text.lines() {
