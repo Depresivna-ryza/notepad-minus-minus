@@ -1,5 +1,4 @@
 use crate::models::{tabs::Tabs, text::TextFile};
-use std::fs::read_to_string;
 
 use dioxus::prelude::*;
 use tracing::info;
@@ -20,16 +19,14 @@ pub fn Editor(tabs: Signal<Tabs>) -> Element {
 
     rsx! {
         div {
+            tabindex: 0,
+
             onfocusin: move |e| {
                 info!("focused on editor: {:?}", e);
             },
 
             onfocusout: move |e| {
                 info!("unfocused on editor: {:?}", e);
-            },
-
-            onclick: move |e| {
-                info!("clicked on editor: {:?}", e);
             },
 
             onkeyup: move |e| {
@@ -71,7 +68,7 @@ pub fn Editor(tabs: Signal<Tabs>) -> Element {
 
             style: "display: flex; flex-direction: column; flex: 1; justify-content: space-between; height: 10px;",
             TopStatusBar {tabs, text},
-            EditorText {text, caret_col: caret_col(), caret_line: caret_line()},
+            EditorText {tabs, text, caret_col: caret_col(), caret_line: caret_line()},
             BottomStatusBar {tabs, caret_col: caret_col(), caret_line: caret_line()}
         }
     }
@@ -79,6 +76,7 @@ pub fn Editor(tabs: Signal<Tabs>) -> Element {
 
 #[component]
 pub fn EditorText(
+    tabs: Signal<Tabs>,
     text: Memo<Option<TextFile>>,
     caret_col: ReadOnlySignal<usize>,
     caret_line: ReadOnlySignal<usize>,
@@ -92,9 +90,13 @@ pub fn EditorText(
         };
     };
 
+
     let lines = text.content.clone();
+
     rsx! {
         div {
+
+
             style: "background-color: purple; flex: 1; overflow-y: auto; flex: 1;",
             for (i, line) in lines.into_iter().enumerate() {
                 EditorLine {content: line, line: i, caret_col: caret_col, caret_line: caret_line}
@@ -125,8 +127,8 @@ pub fn EditorLine(
             for (i, c) in content.iter().enumerate() {
                 span {
                     style: match (i == caret_col() && line == caret_line(), line == caret_line()) {
-                        (true, true) => "background-color: yellow;",
-                        _ => ""
+                        (true, true) => "font-family: monospace; background-color: yellow; font-size: 16px;",
+                        _ => "font-family: monospace; font-size: 16px;"
                     },
                     "{c}"
                 }
@@ -136,7 +138,7 @@ pub fn EditorLine(
                 span {
                     style: "background-color: yellow;",
 
-                    "X"
+                    "-"
                 }
             }
         }
