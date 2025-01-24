@@ -14,10 +14,14 @@ impl TextFile {
     pub fn new(path: PathBuf) -> Self {
         let content = read_to_string(&path).ok().unwrap_or(String::new());
 
-        let content = content
+        let mut content = content
             .lines()
             .map(|line| line.chars().collect_vec())
             .collect_vec();
+
+        if content.is_empty() {
+            content = vec![Vec::new()];
+        }
 
         Self {
             path: path,
