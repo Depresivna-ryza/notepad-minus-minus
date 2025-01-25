@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use std::fs;
 use tracing::info;
 use crate::models::{
     files::{Dir, DirectoryItem, DirectoryItems, FileSystem},
@@ -66,35 +67,46 @@ pub fn FileExplorer(tabs: Signal<Tabs>) -> Element {
 pub fn Directory(dir: Dir) -> Element {
     let dir_name = dir.path.file_name().unwrap().to_str().unwrap();
     
-    let right_click_menu_state = use_context_provider(|| RightClickMenuState {
+    let mut right_click_menu_state = use_context_provider(|| RightClickMenuState {
         is_open: Signal::new(false),
         position: Signal::new((0.0, 0.0)),
     });
+    
+    let mut state = use_context::<Signal<FileSystem>>();
 
     let opened_string = match dir.children {
         DirectoryItems::OpenedDirectory(_) => "[v]",
         DirectoryItems::ClosedDirectory => "[>]",
     };
 
-    let mut right_click_menu_state = use_context::<RightClickMenuState>();
+    let path1 = dir.path.clone();
+    let path2 = dir.path.clone();
+
+    let style = if state.read().is_focused(&dir.path) {
+        "color: red; margin: 5px 0px 5px 20px;"
+    } else {
+        "color: darkred; margin: 5px 0px 5px 20px;"
+    };
 
     rsx!(
         div {
-            style: "color: darkred; border: 1px solid darkred; margin: 5px 0px 5px 20px;",
+            style: "color: darkred; margin: 5px 0px 5px 20px;",
             div {
                 a {
                     style: "white-space: nowrap;",
                     onclick: move |_| {
-                        info!("File clicked: {:?}", dir.path);
-
-                        let mut state = use_context::<Signal<FileSystem>>();
-                        state.write().find(&dir.path);
+                        state.write().find(&path1);
                     },
                     " {opened_string} "
                 }
                 
                 a {
-                    style: "white-space: nowrap;",
+                    style: {style},
+                    
+                    onclick: move |_| {
+                        state.write().change_focus(&path2);
+                    },
+                    
                     oncontextmenu: move |event: MouseEvent| {
                         right_click_menu_state.handle_right_click(event);
                     },
@@ -127,30 +139,43 @@ pub fn Directory(dir: Dir) -> Element {
 pub fn File(file: PathBuf) -> Element {
     let file_name = file.file_name().unwrap().to_str().unwrap();
     
-    let right_click_menu_state = use_context_provider(|| RightClickMenuState {
+    let mut right_click_menu_state = use_context_provider(|| RightClickMenuState {
         is_open: Signal::new(false),
         position: Signal::new((0.0, 0.0)),
     });
-    
-    let mut right_click_menu_state = use_context::<RightClickMenuState>();
+
+    let mut state = use_context::<Signal<FileSystem>>();
+
+    let style = if state.read().is_focused(&file) {
+        "color: red; margin: 5px 0px 5px 20px;"
+    } else {
+        "color: darkred; margin: 5px 0px 5px 20px;"
+    };
+
+    let file1 = file.clone();
+    let file2 = file.clone();
 
     rsx!(
         div {
-            style: "color: blue; border: 1px solid blue; margin: 5px 0px 5px 20px;",
+            style: {style},
             
-            onclick: move |_| {
-                info!("File clicked: {:?}", file.clone());
+            ondoubleclick: move |_| {
+                info!("File clicked: {:?}", file1.clone());
 
                 let mut tabs = use_context::<Signal<Tabs>>();
-                tabs.write().open_tab(file.clone());
+                tabs.write().open_tab(file1.clone());
 
+            },
+
+            onclick: move |_| {
+                state.write().change_focus(&file2);
             },
             
             oncontextmenu: move |event: MouseEvent| {
                 right_click_menu_state.handle_right_click(event);
             },
             
-            "{file_name}"
+            " {file_name}"
         }
         
         if *right_click_menu_state.is_open.read() {
@@ -162,10 +187,12 @@ pub fn File(file: PathBuf) -> Element {
 #[component]
 pub fn RightClickMenu(directory_item: DirectoryItem) -> Element {
     let mut right_click_menu_state = use_context::<RightClickMenuState>();
+    let mut show_dialog= use_signal(|| false);
 
-    info!("Menu position: {:?}", right_click_menu_state.position.read());
-    
-    info!("Directory item: {:?}", directory_item);
+    let path = match directory_item {
+        DirectoryItem::Directory(ref dir) => dir.path.clone(),
+        DirectoryItem::File(ref path_buf) => path_buf.clone(),
+    };
 
     let menu_position = right_click_menu_state.position.read();
 
@@ -181,17 +208,77 @@ pub fn RightClickMenu(directory_item: DirectoryItem) -> Element {
                 padding: 10px;
                 z-index: 1000;
             ",
-            
-            onclick: move |_| {
-                right_click_menu_state.close_menu();
-            },
 
             if let DirectoryItem::Directory(_) = directory_item {
-                p { button { "Create new directory" } }
+                p { 
+                    button { 
+                        class: "option-button",
+                        onclick: move |_| { 
+                            show_dialog.set(true);
+                        },
+                        "Create new directory", 
+                    } 
+                }
                 p { button { "Create new file" } }
             }
             p { button { "Delete" } }
             p { button { "Rename" } }
+
+            if *show_dialog.read() {
+                NewDirectoryDialog { path, show_dialog }
+            }
+        }
+    )
+}
+
+#[component]
+pub fn NewDirectoryDialog(path: PathBuf, mut show_dialog: Signal<bool>) -> Element {
+    let mut right_click_menu_state = use_context::<RightClickMenuState>();
+    let new_directory_name = use_signal(|| String::new());
+
+    let on_input = {
+        let mut new_directory_name = new_directory_name.clone();
+        move |evt: FormEvent| {
+            new_directory_name.set(evt.value().clone());
+        }
+    };
+
+    let on_submit = {
+        let mut new_directory_name = new_directory_name.clone();
+        move |_| {
+            if !new_directory_name().is_empty() {
+                if let Err(error) = fs::create_dir(format!("{}/{}", path.to_str().expect(""), new_directory_name)) {
+                    info!("Show Error Dialog: {}", error);
+                    return;
+                }
+                
+                new_directory_name.set(String::new());
+                show_dialog.set(false);
+                right_click_menu_state.close_menu();
+            } else {
+                println!("Directory name cannot be empty.");
+            }
+        }
+    };
+
+    rsx!(
+        div {
+            class: "dialog",
+            div {
+                class: "dialog-content",
+                h2 { "Create New Directory" }
+                input {
+                    class: "directory-input",
+                    placeholder: "Enter directory name...",
+                    value: "{new_directory_name}",
+                    oninput: on_input,
+                }
+                button {
+                    class: "submit-button",
+                    onclick: on_submit,
+                    "Submit"
+                }
+            }
         }
     )
 }
