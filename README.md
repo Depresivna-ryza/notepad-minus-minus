@@ -23,4 +23,4 @@ The application can run a "live share" mode that will create a watch session and
 - Has to have settings menu for configuration
 - Has to support standard text editor functionality (shift select, ctrl movement, copy&paste)
 - Users are able to login to live sessions using code + password
-- ?? Multiple UI themes
+- ?? Multiple UIjnjjjijikoko themes
