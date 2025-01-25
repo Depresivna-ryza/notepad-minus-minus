@@ -99,10 +99,11 @@ pub fn Directory(dir: Dir) -> Element {
                         right_click_menu_state.handle_right_click(event);
                     },
                     " {dir_name} "
-                    if *right_click_menu_state.is_open.read() {
-                        RightClickMenu { directory_item: DirectoryItem::Directory(dir.clone()) }
-                    }
                 }
+            }
+            
+            if *right_click_menu_state.is_open.read() {
+                RightClickMenu { directory_item: DirectoryItem::Directory(dir.clone()) }
             }
             
             if let DirectoryItems::OpenedDirectory(dir_items) = dir.children {
@@ -150,10 +151,10 @@ pub fn File(file: PathBuf) -> Element {
             },
             
             "{file_name}"
-            
-            if *right_click_menu_state.is_open.read() {
-                RightClickMenu { directory_item: DirectoryItem::File(file.clone()) }
-            }
+        }
+        
+        if *right_click_menu_state.is_open.read() {
+            RightClickMenu { directory_item: DirectoryItem::File(file.clone()) }
         }
     )
 }
