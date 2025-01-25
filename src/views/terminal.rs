@@ -1,12 +1,15 @@
-use std::{cell::RefCell, env, process::{ChildStdout, Stdio}, rc::Rc, time::Duration, vec};
+use std::{cell::RefCell, env, io::stdout, ops::DerefMut, process::{ChildStdout, Stdio}, rc::Rc, sync::{mpsc::{channel, Receiver}, Arc}, time::Duration, vec};
 
 
 use dioxus::prelude::*;
-use tokio::{io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader}, process::{Child, Command}, time::sleep};
+use dioxus_elements::div;
+use svg_attributes::d;
+use tokio::{io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader}, process::{Child, Command}, sync::{ RwLock}, time::{sleep, timeout}};
+use tracing::info;
 
 
-async fn launch_sh(shell: String) -> Rc<RefCell<Child>> {
-    Rc::new(RefCell::new(Command::new(shell)
+async fn launch_sh(shell: String) -> Arc<RwLock<Child>> {
+    Arc::new(RwLock::new(Command::new(shell)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -17,7 +20,7 @@ async fn launch_sh(shell: String) -> Rc<RefCell<Child>> {
 #[component]
 pub fn Terminal(hidden: Signal<bool>) -> Element {
 
-    dbg!("Terminal hidden: {}", hidden.peek());
+    dbg!(hidden.peek());
     
     let future = use_resource(|| async move {
 
@@ -31,36 +34,12 @@ pub fn Terminal(hidden: Signal<bool>) -> Element {
         launch_sh(shell).await
     });
 
-    let mut input_text = use_signal(|| "".to_string());
 
     rsx! {
         div {
-            tabindex: 0,
-            id: "terminal",
-            onclick:  move |_| async  {
-
-            },
-            onfocus: move |_| {
-                println!("Terminal focused");
-            },
             hidden: hidden,
-            style: "background-color: lightgreen; overflow-x: auto; overflow-y: auto; height: 200px;",
-            "Terminal"
-
+            style: "height: 200px",
             TerminalText {future}
-
-            input {
-                style: "background-color: white; color: black;",
-                value: input_text,
-                onkeydown: move |event| {
-                    let key = event.key();
-                    if let Key::Enter = key {
-                        let input = input_text.read().clone();
-                        println!("Input: {}", input);
-                        input_text.write().clear();
-                    }
-                }
-            }
         }
     }
 }
@@ -76,35 +55,88 @@ fn TerminalLoading() -> Element {
 }
 
 #[component]
-fn TerminalText(future: Resource<Rc<RefCell<Child>>>) -> Element {
-    if let Some(sh1) = &*future.read_unchecked() {
-        let mut buffer = use_signal(|| "PS1".to_string());
-        
-        let sh2 = Rc::clone(sh1);
-        use_future(move ||{
-            let sh = Rc::clone(&sh2);
+fn TerminalText(future: Resource<Arc<RwLock<Child>>>) -> Element {
+    if let Some(ref sh1) = *future.read_unchecked() {
+        let mut buffer = use_signal(|| "".to_string());
+        let mut input_text = use_signal(|| "".to_string());
+        let mut commands = use_signal(|| "".to_string());
+        let (tx, mut rx) = channel::<String>();
+
+        let write_rc = Arc::clone(sh1); //idk how to to it nicely :/
+        //pushing commands to stdin
+        tokio::spawn(async move {
+                loop {
+                    sleep(Duration::from_millis(10)).await;
+                    if let Ok(val) = rx.recv() {
+                        let mut sh = write_rc.write().await;
+                        // let mut binding =  sh.deref_mut();
+                        let stdin = sh.stdin.as_mut().unwrap();
+                        let res = stdin.write_all(val.as_bytes()).await.expect("Failed to write to stdin");
+                        // dbg!(commands.peek());
+                        dbg!(res);
+                        dbg!(val);
+                    }
+                }
+        });
+
+        let read_rc = Arc::clone(sh1); //idk how to to it nicely :/
+        let _ = use_resource(move || { //pulling commands from stdout
+            let sh = Arc::clone(&read_rc); //idk how to to it nicely :/
             async move {
-                let mut binding1 = sh.borrow_mut();
-                let stdin = binding1.stdin.as_mut().unwrap();
-                stdin.write("prompt [$P]$G".as_bytes()).await.unwrap();
+                loop {
+                    sleep(Duration::from_millis(10000)).await;
+                    let mut sh = sh.write().await;
+                    let stdout = sh.stdout.as_mut().expect("Failed to get stdout");
+                    dbg!("Reading from stdout");
+                    let mut outBuf = BufReader::new(stdout);
+                    let Ok(buf) =  timeout(Duration::from_millis(200), outBuf.fill_buf()).await else {
+                        dbg!("Failed to read from stdout1");
+                        continue;
+                    };
+                    let Ok(buf) = buf else {
+                        dbg!("Failed to read from stdout2");
+                        continue;
+                    };
 
-                let mut buf = String::new();
-
-                dbg!("Wrote to stdin");
-                let stdout = binding1.stdout.as_mut().expect("Failed to get stdout");
-                
-                let mut stdout = BufReader::new(stdout);
-
-                let res = stdout.read_line(&mut buf).await.expect("Failed to read stdout");
-                dbg!("Read from stdout: {}", res);
-                *buffer.write() = buf;
-            } 
+                    let buffer_str = &*String::from_utf8_lossy(buf);
+                    buffer.write().push_str(buffer_str);
+                    dbg!(buffer_str);
+                }
+            }
         });
 
         rsx! {
-            pre {
-                style: "background-color: white; color: black;",
-                "{buffer}"
+            div {  
+                style: "display: flex; flex-direction: column; height: 100%;",
+                textarea {
+                    style: "background-color: black; color: white; width: 100%; flex: 1; overflow: scroll; margin: 0; padding: 0; border: 0;",
+                    readonly: true,
+                    value: buffer,
+                }
+            
+            input {
+                style: "background-color: black; color: white; height: 30px; width: 100%; margin: 0; padding: 0; border: 0;",
+                value: input_text,
+                
+                oninput: move |event| {
+                    let val = event.value();
+                    dbg!("Input: {}", val.clone());
+                    *input_text.write() = val.clone();
+                    // *commands.write() = input_text.read().to_string();
+                    
+                },
+                
+                onkeydown: move |event| {
+                    if tx.send(event.key().to_string()).is_err() {
+                        dbg!("Failed to send to channel");
+                    }
+                    if event.key() == Key::Enter {
+                        dbg!("Enter pressed");
+                        *input_text.write() = "".to_string();
+                        *commands.write() = "\n".to_string();
+                    }
+                }
+            }
             }
         }
     } else {
