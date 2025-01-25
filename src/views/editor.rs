@@ -11,12 +11,12 @@ pub fn Editor(tabs: Signal<Tabs>) -> Element {
     let text: Memo<Option<TextFile>> = use_memo(move || tabs.read().get_current_file());
 
     let caret_col = use_memo(move || match text.read().clone() {
-        Some(text) => text.caret_column,
+        Some(text) => text.caret.c,
         None => 0,
     });
 
     let caret_line = use_memo(move || match text.read().clone() {
-        Some(text) => text.caret_line,
+        Some(text) => text.caret.l,
         None => 0,
     });
 
@@ -190,6 +190,14 @@ pub fn EditorLine(
                         _ => "font-family: monospace; font-size: 16px; white-space: pre"
                     },
                     "{c}"
+                }
+            }
+
+            span {
+                style: "flex: 1;",
+                onclick: move |_| {
+                    info!("clicked on line: {:?}", line);
+                    tabs.write().get_current_file_mut().map(|file| file.set_caret_position(line(), content().len()));
                 }
             }
         }
