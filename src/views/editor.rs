@@ -1,6 +1,9 @@
+use std::rc::Rc;
+
 use crate::models::{tabs::Tabs, text::TextFile};
 
 use dioxus::prelude::*;
+use dioxus_elements::geometry::{euclid::{Size2D, Vector2D}, Pixels};
 use tracing::info;
 
 #[component]
@@ -90,16 +93,47 @@ pub fn EditorText(
         };
     };
 
+    let mut element: Signal<Option<Rc<MountedData>>> = use_signal(|| None);
+
+    let scroll_offset = use_resource(move || async move {
+        if let Some(ref elem) = *element.read() {
+            elem.get_scroll_offset().await.unwrap()
+        } else {
+            Vector2D::new(0.0, 0.0)
+        }
+    });
+
+    let scroll_size = use_resource(move || async move {
+        if let Some(ref elem) = *element.read() {
+            elem.get_scroll_size().await.unwrap()
+        } else {
+            Size2D::new(0.0, 0.0)
+        }
+    });
+
+    let scroll_offset= use_signal(move || scroll_offset.read_unchecked().clone());
+    let scroll_size = use_signal(move || scroll_size.read_unchecked().clone());
 
     let lines = text.content.clone();
 
     rsx! {
         div {
-
+            onmounted: move |e| {
+                info!("mounted line: {:?}", e);
+                element.set(Some(e.data()));
+            },
 
             style: "background-color: purple; flex: 1; overflow-y: auto; flex: 1;",
             for (i, line) in lines.into_iter().enumerate() {
-                EditorLine {content: line, line: i, caret_col: caret_col, caret_line: caret_line}
+
+                EditorLine {
+                    content: line, 
+                    line: i, 
+                    caret_col: caret_col, 
+                    caret_line: caret_line, 
+                    scroll_offset: scroll_offset,
+                    scroll_size: scroll_size,
+                }
             }
         }
     }
@@ -111,9 +145,44 @@ pub fn EditorLine(
     line: ReadOnlySignal<usize>,
     caret_col: ReadOnlySignal<usize>,
     caret_line: ReadOnlySignal<usize>,
+    scroll_offset: Signal<Option<Vector2D<f64, Pixels>>>,
+    scroll_size: Signal<Option<Size2D<f64, Pixels>>>,
 ) -> Element {
+    
+    let mut element: Signal<Option<Rc<MountedData>>> = use_signal(|| None);
+
+    let _ = use_resource(move || async move {
+
+        if line == caret_line() {
+            if let Some(ref elem) = *element.read() {
+                let client_rect = elem.get_client_rect().await.unwrap();
+                let Some(scroll_offset) = scroll_offset.read().clone() else {
+                    return;
+                };
+                let Some(scroll_size) = scroll_size.read().clone() else {
+                    return;
+                };
+
+                dbg!(client_rect, scroll_offset, scroll_size);
+    
+                let is_visible = client_rect.min_y() >= scroll_offset.y &&
+                                 client_rect.min_y() <= (scroll_offset.y + scroll_size.height);
+    
+                if !is_visible {
+                    let _ = elem.scroll_to(ScrollBehavior::Instant).await;
+                }
+            }
+        }
+    });
+
+
     rsx! {
         div {
+            onmounted: move |e| {
+                info!("mounted line: {:?}", e);
+                element.set(Some(e.data()));
+            },
+
             style: match line == caret_line() {
                 true => "display: flex; flex-direction: row; background-color: gray;",
                 false => "display: flex; flex-direction: row;"
