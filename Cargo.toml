@@ -12,7 +12,8 @@ dioxus-heroicons = "0.4.0"
 itertools = "0.14.0"
 rfd = "0.15.2"
 tracing = "0.1.41"
-
+tokio = { version = "1.43.0", features = ["full"] }
+dotenvy = "0.15.7"
 
 [features]
 default = ["desktop"]

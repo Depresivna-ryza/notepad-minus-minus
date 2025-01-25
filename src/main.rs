@@ -1,6 +1,7 @@
 pub mod models;
 pub mod views;
 
+use dotenvy::dotenv;
 use models::panels::ShownPanels;
 use models::tabs::Tabs;
 use views::editor::Editor;
@@ -16,7 +17,8 @@ const FAVICON: Asset = asset!("/assets/favicon.ico");
 const MAIN_CSS: Asset = asset!("/assets/main.css");
 
 fn main() {
-    dioxus::launch(Layout);
+    dotenv().ok();
+    launch(Layout);
 }
 
 #[component]
@@ -28,7 +30,7 @@ pub fn Layout() -> Element {
 
         document::Link { rel: "icon", href: FAVICON }
         document::Link { rel: "stylesheet", href: MAIN_CSS }
-
+        
         div {
             style: "display: flex; flex-direction: row; width: 100vw ; height: 100vh;",
             SidePanel {shown_panels}
