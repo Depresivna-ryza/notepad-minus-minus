@@ -8,8 +8,7 @@ edition = "2021"
 
 [dependencies]
 async-std = "1.13.0"
-dioxus = { version = "0.6.0", features = [] }
-freya = "0.2.2"
+dioxus = { version = "0.6.2", features = [] }
 itertools = "0.14.0"
 rfd = "0.15.2"
 tracing = "0.1.41"

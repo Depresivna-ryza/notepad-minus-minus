@@ -9,7 +9,6 @@ use views::tabs::EditorTabs;
 
 use dioxus::prelude::*;
 
-// use freya::prelude::launch;
 
 const FAVICON: Asset = asset!("/assets/favicon.ico");
 const MAIN_CSS: Asset = asset!("/assets/main.css");
