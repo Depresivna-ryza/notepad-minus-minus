@@ -1,4 +1,4 @@
-use std::{fs::read_to_string, path::{Path, PathBuf}};
+use std::{cmp::{max, min}, fs::read_to_string, path::{Path, PathBuf}};
 
 use itertools::Itertools;
 
@@ -126,5 +126,10 @@ impl TextFile {
         self.content.insert(self.caret_line + 1, right_part);
 
         self.caret_move_right();
+    }
+
+    pub fn set_caret_position(&mut self, line: usize, column: usize) {
+        self.caret_line = max(0, min(line, self.content.len() - 1));
+        self.caret_column = max(0, min(column, self.get_cols(self.caret_line)));
     }
 }

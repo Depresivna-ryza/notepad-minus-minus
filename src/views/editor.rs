@@ -95,25 +95,6 @@ pub fn EditorText(
 
     let mut element: Signal<Option<Rc<MountedData>>> = use_signal(|| None);
 
-    // let scroll_offset = use_resource(move || async move {
-    //     if let Some(ref elem) = *element.read() {
-    //         elem.get_scroll_offset().await.unwrap()
-    //     } else {
-    //         Vector2D::new(0.0, 0.0)
-    //     }
-    // });
-
-    // let scroll_size = use_resource(move || async move {
-    //     if let Some(ref elem) = *element.read() {
-    //         elem.get_scroll_size().await.unwrap()
-    //     } else {
-    //         Size2D::new(0.0, 0.0)
-    //     }
-    // });
-
-    // let scroll_offset= use_signal(move || scroll_offset.read_unchecked().clone());
-    // let scroll_size = use_signal(move || scroll_size.read_unchecked().clone());
-
     let lines = text.content.clone();
 
     rsx! {
@@ -127,13 +108,12 @@ pub fn EditorText(
             for (i, line) in lines.into_iter().enumerate() {
 
                 EditorLine {
+                    tabs: tabs,
                     content: line, 
                     line: i, 
                     caret_col: caret_col, 
                     caret_line: caret_line,
                     parent_element: element,
-                    // scroll_offset: scroll_offset,
-                    // scroll_size: scroll_size,
                 }
             }
         }
@@ -142,13 +122,12 @@ pub fn EditorText(
 
 #[component]
 pub fn EditorLine(
+    tabs: Signal<Tabs>,
     content: ReadOnlySignal<Vec<char>>, 
     line: ReadOnlySignal<usize>,
     caret_col: ReadOnlySignal<usize>,
     caret_line: ReadOnlySignal<usize>,
     parent_element: Signal<Option<Rc<MountedData>>>,
-    // scroll_offset: Signal<Option<Vector2D<f64, Pixels>>>,
-    // scroll_size: Signal<Option<Size2D<f64, Pixels>>>,
 ) -> Element {
     
     let mut element: Signal<Option<Rc<MountedData>>> = use_signal(|| None);
@@ -170,9 +149,6 @@ pub fn EditorLine(
                     dbg!(client_rect.min_y(), scroll_offset.y);
                     dbg!(client_rect.max_y(), scroll_offset.y + scroll_size.height);
         
-                    // let is_not_visible = client_rect.min_y() < scroll_offset.y ||
-                    //                 client_rect.max_y() > (scroll_offset.y + scroll_size.height);
-
                     let height_underflown = client_rect.min_y() < parent_rect.min_y();
                     let height_overflown = client_rect.max_y() > parent_rect.max_y();
         
@@ -202,21 +178,18 @@ pub fn EditorLine(
                 "{line}"
             }
 
-            for (i, c) in content.iter().enumerate() {
+            for (i, c) in content.iter().map(|c| c.clone()).chain(std::iter::once(' ')).enumerate() {
                 span {
+                    onclick: move |_| {
+                        info!("clicked on line: {:?}, col: {:?}", line, i);
+                        tabs.write().get_current_file_mut().map(|file| file.set_caret_position(line(), i));
+                    },
+            
                     style: match (i == caret_col() && line == caret_line(), line == caret_line()) {
-                        (true, true) => "font-family: monospace; background-color: yellow; font-size: 16px;",
-                        _ => "font-family: monospace; font-size: 16px;"
+                        (true, true) => "font-family: monospace; background-color: yellow; font-size: 16px; white-space: pre",
+                        _ => "font-family: monospace; font-size: 16px; white-space: pre"
                     },
                     "{c}"
-                }
-            }
-
-            if content.len() == caret_col() && line == caret_line(){
-                span {
-                    style: "background-color: yellow;",
-
-                    "-"
                 }
             }
         }
@@ -228,7 +201,7 @@ pub fn TopStatusBar(tabs: ReadOnlySignal<Tabs>, text: Memo<Option<TextFile>>) ->
     let path: Option<Vec<String>> = tabs()
         .current_file
         .map(|p| p.iter().map(|p| p.to_string_lossy().to_string()).collect());
-
+   
     rsx! {
         div {
             style: "background-color: blue; height: 40px; display: flex; justify-content: space-between; align-items: center; ",
