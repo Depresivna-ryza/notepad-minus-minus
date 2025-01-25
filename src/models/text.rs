@@ -2,12 +2,33 @@ use std::{cmp::{max, min}, fs::read_to_string, path::{Path, PathBuf}};
 
 use itertools::Itertools;
 
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct Caret{
+    pub l: usize,
+    pub c: usize,
+}
+
+impl Caret{
+    pub fn from(l: usize, c: usize) -> Self{
+        Self{
+            l,
+            c,
+        }
+    }
+    pub fn new() -> Self{
+        Self{
+            l: 0,
+            c: 0,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct TextFile {
     pub path: PathBuf,
     pub content: Vec<Vec<char>>,
-    pub caret_line: usize,
-    pub caret_column: usize,
+    pub caret: Caret,
 }
 
 impl TextFile {
@@ -26,8 +47,7 @@ impl TextFile {
         Self {
             path: path,
             content: content.clone(),
-            caret_line: 0,
-            caret_column: 0,
+            caret: Caret::new(),
         }
     }
 
@@ -58,11 +78,11 @@ impl TextFile {
     }
 
     pub fn caret_move_left(&mut self) {
-        match (self.caret_line, self.caret_column) {
-            (_, c) if c > 0 => self.caret_column -= 1,
+        match (self.caret.l, self.caret.c) {
+            (_, c) if c > 0 => self.caret.c -= 1,
             (l, _) if l > 0 => {
-                self.caret_line -= 1;
-                self.caret_column = match self.get_cols(self.caret_line){
+                self.caret.l -= 1;
+                self.caret.c = match self.get_cols(self.caret.l){
                     0 => 0,
                     c => c - 1
                 }
@@ -72,32 +92,32 @@ impl TextFile {
     }
 
     pub fn caret_move_right(&mut self) {
-        match (self.caret_line, self.caret_column) {
-            (l, c) if c < self.get_cols(l) => self.caret_column += 1,
+        match (self.caret.l, self.caret.c) {
+            (l, c) if c < self.get_cols(l) => self.caret.c += 1,
             (l, _) if l + 1 < self.content.len() => {
-                self.caret_line += 1;
-                self.caret_column = 0;
+                self.caret.l += 1;
+                self.caret.c = 0;
             }
             _ => {}
         }
     }
 
     pub fn caret_move_down(&mut self) {
-        if self.caret_line + 1 < self.content.len() {
-            self.caret_line += 1;
-            self.caret_column = self.caret_column.min(self.get_cols(self.caret_line));
+        if self.caret.l + 1 < self.content.len() {
+            self.caret.l += 1;
+            self.caret.c = self.caret.c.min(self.get_cols(self.caret.l));
         }
     }
 
     pub fn caret_move_up(&mut self) {
-        if self.caret_line > 0 {
-            self.caret_line -= 1;
-            self.caret_column = self.caret_column.min(self.get_cols(self.caret_line));
+        if self.caret.l > 0 {
+            self.caret.l -= 1;
+            self.caret.c = self.caret.c.min(self.get_cols(self.caret.l));
         }
     }
 
     pub fn remove_char(&mut self) {
-        match (self.caret_line, self.caret_column) {
+        match (self.caret.l, self.caret.c) {
             (l, c) if c > 0 => {
                 self.content[l].remove(c - 1);
                 self.caret_move_left();
@@ -105,31 +125,31 @@ impl TextFile {
             (l, _) if l > 0 => {
                 let right_part: Vec<char> = self.content[l].drain(..).collect();
 
-                self.caret_line -= 1;
-                self.caret_column = self.get_cols(self.caret_line);
-                self.content[self.caret_line].extend(right_part);
-                self.content.remove(self.caret_line + 1);
+                self.caret.l -= 1;
+                self.caret.c = self.get_cols(self.caret.l);
+                self.content[self.caret.l].extend(right_part);
+                self.content.remove(self.caret.l + 1);
             }
             (_,_) => {}
         }
     }
 
     pub fn insert_char(&mut self, c: char) {
-        self.content[self.caret_line].insert(self.caret_column, c);
+        self.content[self.caret.l].insert(self.caret.c, c);
         self.caret_move_right();
     }
 
     pub fn insert_newline(&mut self) {
-        let right_part: Vec<char> = self.content[self.caret_line]
-            .drain(self.caret_column..)
+        let right_part: Vec<char> = self.content[self.caret.l]
+            .drain(self.caret.c..)
             .collect();
-        self.content.insert(self.caret_line + 1, right_part);
+        self.content.insert(self.caret.l + 1, right_part);
 
         self.caret_move_right();
     }
 
     pub fn set_caret_position(&mut self, line: usize, column: usize) {
-        self.caret_line = max(0, min(line, self.content.len() - 1));
-        self.caret_column = max(0, min(column, self.get_cols(self.caret_line)));
+        self.caret.l = max(0, min(line, self.content.len() - 1));
+        self.caret.c = max(0, min(column, self.get_cols(self.caret.l)));
     }
 }
