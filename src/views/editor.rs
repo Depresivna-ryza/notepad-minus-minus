@@ -95,24 +95,24 @@ pub fn EditorText(
 
     let mut element: Signal<Option<Rc<MountedData>>> = use_signal(|| None);
 
-    let scroll_offset = use_resource(move || async move {
-        if let Some(ref elem) = *element.read() {
-            elem.get_scroll_offset().await.unwrap()
-        } else {
-            Vector2D::new(0.0, 0.0)
-        }
-    });
+    // let scroll_offset = use_resource(move || async move {
+    //     if let Some(ref elem) = *element.read() {
+    //         elem.get_scroll_offset().await.unwrap()
+    //     } else {
+    //         Vector2D::new(0.0, 0.0)
+    //     }
+    // });
 
-    let scroll_size = use_resource(move || async move {
-        if let Some(ref elem) = *element.read() {
-            elem.get_scroll_size().await.unwrap()
-        } else {
-            Size2D::new(0.0, 0.0)
-        }
-    });
+    // let scroll_size = use_resource(move || async move {
+    //     if let Some(ref elem) = *element.read() {
+    //         elem.get_scroll_size().await.unwrap()
+    //     } else {
+    //         Size2D::new(0.0, 0.0)
+    //     }
+    // });
 
-    let scroll_offset= use_signal(move || scroll_offset.read_unchecked().clone());
-    let scroll_size = use_signal(move || scroll_size.read_unchecked().clone());
+    // let scroll_offset= use_signal(move || scroll_offset.read_unchecked().clone());
+    // let scroll_size = use_signal(move || scroll_size.read_unchecked().clone());
 
     let lines = text.content.clone();
 
@@ -130,9 +130,10 @@ pub fn EditorText(
                     content: line, 
                     line: i, 
                     caret_col: caret_col, 
-                    caret_line: caret_line, 
-                    scroll_offset: scroll_offset,
-                    scroll_size: scroll_size,
+                    caret_line: caret_line,
+                    parent_element: element,
+                    // scroll_offset: scroll_offset,
+                    // scroll_size: scroll_size,
                 }
             }
         }
@@ -145,8 +146,9 @@ pub fn EditorLine(
     line: ReadOnlySignal<usize>,
     caret_col: ReadOnlySignal<usize>,
     caret_line: ReadOnlySignal<usize>,
-    scroll_offset: Signal<Option<Vector2D<f64, Pixels>>>,
-    scroll_size: Signal<Option<Size2D<f64, Pixels>>>,
+    parent_element: Signal<Option<Rc<MountedData>>>,
+    // scroll_offset: Signal<Option<Vector2D<f64, Pixels>>>,
+    // scroll_size: Signal<Option<Size2D<f64, Pixels>>>,
 ) -> Element {
     
     let mut element: Signal<Option<Rc<MountedData>>> = use_signal(|| None);
@@ -155,21 +157,28 @@ pub fn EditorLine(
 
         if line == caret_line() {
             if let Some(ref elem) = *element.read() {
-                let client_rect = elem.get_client_rect().await.unwrap();
-                let Some(scroll_offset) = scroll_offset.read().clone() else {
-                    return;
-                };
-                let Some(scroll_size) = scroll_size.read().clone() else {
-                    return;
-                };
+                if let Some(ref parent_elem) = *parent_element.read() {
+                    let scroll_offset = parent_elem.get_scroll_offset().await.unwrap();
+                    let scroll_size = parent_elem.get_scroll_size().await.unwrap();
+                    let parent_rect = parent_elem.get_client_rect().await.unwrap();
 
-                dbg!(client_rect, scroll_offset, scroll_size);
-    
-                let is_visible = client_rect.min_y() >= scroll_offset.y &&
-                                 client_rect.min_y() <= (scroll_offset.y + scroll_size.height);
-    
-                if !is_visible {
-                    let _ = elem.scroll_to(ScrollBehavior::Instant).await;
+                    let client_rect = elem.get_client_rect().await.unwrap();
+
+                    // dbg!(client_rect, scroll_offset, scroll_size);
+
+                    dbg!(parent_rect.min_y(), parent_rect.max_y());
+                    dbg!(client_rect.min_y(), scroll_offset.y);
+                    dbg!(client_rect.max_y(), scroll_offset.y + scroll_size.height);
+        
+                    // let is_not_visible = client_rect.min_y() < scroll_offset.y ||
+                    //                 client_rect.max_y() > (scroll_offset.y + scroll_size.height);
+
+                    let height_underflown = client_rect.min_y() < parent_rect.min_y();
+                    let height_overflown = client_rect.max_y() > parent_rect.max_y();
+        
+                    if height_underflown || height_overflown {
+                        let _ = elem.scroll_to(ScrollBehavior::Instant).await;
+                    }
                 }
             }
         }
