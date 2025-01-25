@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use crate::models::{tabs::Tabs, text::TextFile};
+use crate::models::{tabs::Tabs, text::{Caret, TextFile}};
 
 use dioxus::prelude::*;
 use dioxus_elements::geometry::{euclid::{Size2D, Vector2D}, Pixels};
@@ -10,15 +10,14 @@ use tracing::info;
 pub fn Editor(tabs: Signal<Tabs>) -> Element {
     let text: Memo<Option<TextFile>> = use_memo(move || tabs.read().get_current_file());
 
-    let caret_col = use_memo(move || match text.read().clone() {
-        Some(text) => text.caret.c,
-        None => 0,
+    let caret = use_memo(move || match text.read().clone() {
+        Some(text) => text.get_caret(),
+        None => Caret::new(),
     });
 
-    let caret_line = use_memo(move || match text.read().clone() {
-        Some(text) => text.caret.l,
-        None => 0,
-    });
+    let caret_col = use_memo(move || caret.read().col);
+
+    let caret_line = use_memo(move || caret.read().ln);
 
     rsx! {
         div {
@@ -56,8 +55,12 @@ pub fn Editor(tabs: Signal<Tabs>) -> Element {
                         }
                     }
 
-                    Key::Delete | Key::Backspace => {
-                        tabs.write().get_current_file_mut().map(|file| file.remove_char());
+                    Key::Backspace => {
+                        tabs.write().get_current_file_mut().map(|file| file.backspace());
+                    }
+
+                    Key::Delete => {
+                        tabs.write().get_current_file_mut().map(|file| file.delete());
                     }
 
                     Key::Enter => {
@@ -72,7 +75,7 @@ pub fn Editor(tabs: Signal<Tabs>) -> Element {
             style: "display: flex; flex-direction: column; flex: 1; justify-content: space-between; height: 10px;",
             TopStatusBar {tabs, text},
             EditorText {tabs, text, caret_col: caret_col(), caret_line: caret_line()},
-            BottomStatusBar {tabs, caret_col: caret_col(), caret_line: caret_line()}
+            BottomStatusBar {tabs, caret_col: caret_col(), caret_line: caret_line(), char_idx: text.read().clone().map_or(0, |t| t.char_idx)},
         }
     }
 }
@@ -95,8 +98,6 @@ pub fn EditorText(
 
     let mut element: Signal<Option<Rc<MountedData>>> = use_signal(|| None);
 
-    let lines = text.content.clone();
-
     rsx! {
         div {
             onmounted: move |e| {
@@ -105,12 +106,12 @@ pub fn EditorText(
             },
 
             style: "background-color: purple; flex: 1; overflow-y: auto; flex: 1;",
-            for (i, line) in lines.into_iter().enumerate() {
-
+            for (i, line) in text.chars().into_iter().enumerate() {
+                
                 EditorLine {
                     tabs: tabs,
                     content: line, 
-                    line: i, 
+                    line_i: i, 
                     caret_col: caret_col, 
                     caret_line: caret_line,
                     parent_element: element,
@@ -124,7 +125,7 @@ pub fn EditorText(
 pub fn EditorLine(
     tabs: Signal<Tabs>,
     content: ReadOnlySignal<Vec<char>>, 
-    line: ReadOnlySignal<usize>,
+    line_i: ReadOnlySignal<usize>,
     caret_col: ReadOnlySignal<usize>,
     caret_line: ReadOnlySignal<usize>,
     parent_element: Signal<Option<Rc<MountedData>>>,
@@ -133,8 +134,7 @@ pub fn EditorLine(
     let mut element: Signal<Option<Rc<MountedData>>> = use_signal(|| None);
 
     let _ = use_resource(move || async move {
-
-        if line == caret_line() {
+        if line_i == caret_line() {
             if let Some(ref elem) = *element.read() {
                 if let Some(ref parent_elem) = *parent_element.read() {
                     let scroll_offset = parent_elem.get_scroll_offset().await.unwrap();
@@ -142,8 +142,6 @@ pub fn EditorLine(
                     let parent_rect = parent_elem.get_client_rect().await.unwrap();
 
                     let client_rect = elem.get_client_rect().await.unwrap();
-
-                    // dbg!(client_rect, scroll_offset, scroll_size);
 
                     dbg!(parent_rect.min_y(), parent_rect.max_y());
                     dbg!(client_rect.min_y(), scroll_offset.y);
@@ -168,24 +166,24 @@ pub fn EditorLine(
                 element.set(Some(e.data()));
             },
 
-            style: match line == caret_line() {
+            style: match line_i == caret_line() {
                 true => "display: flex; flex-direction: row; background-color: gray;",
                 false => "display: flex; flex-direction: row;"
             },
             
             span {
                 style: "padding-right: 10px; min-width: 30px; background-color: darkblue;",
-                "{line}"
+                "{line_i}"
             }
 
-            for (i, c) in content.iter().map(|c| c.clone()).chain(std::iter::once(' ')).enumerate() {
+            for (i, c) in content.iter().map(|c| if c.clone() != '\n' { c.clone()} else {' '}).enumerate() {
                 span {
                     onclick: move |_| {
-                        info!("clicked on line: {:?}, col: {:?}", line, i);
-                        tabs.write().get_current_file_mut().map(|file| file.set_caret_position(line(), i));
+                        info!("clicked on line: {:?}, col: {:?}, char: {}", line_i, i, c);
+                        tabs.write().get_current_file_mut().map(|file| file.set_caret_position(line_i(), i));
                     },
             
-                    style: match (i == caret_col() && line == caret_line(), line == caret_line()) {
+                    style: match (i == caret_col() && line_i == caret_line(), line_i == caret_line()) {
                         (true, true) => "font-family: monospace; background-color: yellow; font-size: 16px; white-space: pre",
                         _ => "font-family: monospace; font-size: 16px; white-space: pre"
                     },
@@ -196,8 +194,9 @@ pub fn EditorLine(
             span {
                 style: "flex: 1;",
                 onclick: move |_| {
-                    info!("clicked on line: {:?}", line);
-                    tabs.write().get_current_file_mut().map(|file| file.set_caret_position(line(), content().len()));
+                    info!("clicked on line: {:?}", line_i);
+                    info!("{:?}", content);
+                    tabs.write().get_current_file_mut().map(|file| file.set_caret_position(line_i(), content().len() - 1));
                 }
             }
         }
@@ -227,13 +226,14 @@ pub fn BottomStatusBar(
     tabs: ReadOnlySignal<Tabs>,
     caret_col: ReadOnlySignal<usize>,
     caret_line: ReadOnlySignal<usize>,
+    char_idx: ReadOnlySignal<usize>,
 ) -> Element {
     rsx! {
         div {
             style: "background-color: blue; height: 30px; display: flex; justify-content: flex-end; align-items: center;",
             span {
                 style: "margin-left: 10px;",
-                "Line: {caret_line}, Col: {caret_col}"
+                "Line: {caret_line}, Col: {caret_col} || Char: {char_idx}"
             }
         }
     }
