@@ -5,21 +5,34 @@ use itertools::Itertools;
 #[derive(PartialEq, Clone, Debug)]
 pub struct FileSystem {
     pub root: Option<Dir>,
+    focus: Option<PathBuf>,
 }
 
 impl FileSystem {
     pub fn from(root: Dir) -> Self {
-        Self { root: Some(root) }
+        Self { root: Some(root), focus: None }
     }
 
     pub fn new() -> Self {
-        Self { root: None }
+        Self { root: None, focus: None }
     }
 
     pub fn find(&mut self, path: &PathBuf) {
         if let Some(ref mut root) = self.root {
             root.find(path);
         }
+    }
+    
+    pub fn change_focus(&mut self, path: &PathBuf) {
+        self.focus = Some(path.clone());
+    }
+    
+    pub fn clear_focus(&mut self) {
+        self.focus = None;
+    }
+    
+    pub fn is_focused(&self, path: &PathBuf) -> bool {
+        self.focus.as_ref() == Some(path)
     }
 }
 
