@@ -1,5 +1,5 @@
 use std::path::PathBuf;
-
+use tracing::info;
 use crate::models::{
     files::{Dir, DirectoryItem, DirectoryItems, FileSystem},
     tabs::Tabs,
@@ -7,7 +7,6 @@ use crate::models::{
 
 use dioxus::prelude::*;
 use rfd::{AsyncFileDialog, FileDialog};
-use tracing::info;
 
 #[component]
 pub fn FileExplorer(tabs: Signal<Tabs>) -> Element {

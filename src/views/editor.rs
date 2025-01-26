@@ -182,7 +182,7 @@ pub fn EditorText(
                 element.set(Some(e.data()));
             },
 
-            style: "background-color: purple; flex: 1; overflow-y: auto; flex: 1;",
+            style: "background-color: purple; display: flex; overflow-y: scroll; flex: 1; flex-direction: column",
             for (i, line) in text.chars().into_iter().enumerate() {
                 
                 EditorLine {
