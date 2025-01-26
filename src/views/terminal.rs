@@ -1,15 +1,15 @@
-use std::{cell::RefCell, env, process::Stdio, sync::Arc, time::Duration, vec};
+use std::{env, process::Stdio, sync::Arc, time::Duration, vec};
 use dioxus::prelude::*;
-use tokio::{io::{AsyncBufReadExt, AsyncWriteExt, BufReader}, process::{Child, Command}, sync::Mutex, time::{sleep, timeout}};
+use tokio::{io::{AsyncBufReadExt, AsyncWriteExt, BufReader}, process::{Child, Command}, sync::RwLock, time::{sleep, timeout}};
 
 
-async fn launch_sh(shell: String) -> Arc<Mutex<RefCell<Child>>> {
-    Arc::new(Mutex::new(RefCell::new(Command::new(shell)
+async fn launch_sh(shell: String) -> Arc<RwLock<Child>> {
+    Arc::new(RwLock::new(Command::new(shell)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
-        .expect("Failed to start sh"))))
+        .expect("Failed to start sh")))
 }
 
 #[component]
@@ -47,7 +47,7 @@ fn TerminalLoading() -> Element {
 }
 
 #[component]
-fn TerminalText(future: Resource<Arc<Mutex<RefCell<Child>>>>) -> Element {
+fn TerminalText(future: Resource<Arc<RwLock<Child>>>) -> Element {
     if let Some(ref sh1) = *future.read_unchecked() {
         let mut buffer = use_signal(|| "".to_string());
         let mut input_text = use_signal(|| "".to_string());
@@ -57,9 +57,8 @@ fn TerminalText(future: Resource<Arc<Mutex<RefCell<Child>>>>) -> Element {
         let _ = use_resource(move ||{ //pushing commands to stdin
             let sh = Arc::clone(&write_rc); //idk how to to it nicely :/
             async move {
-                let sh = sh.lock().await;
-                let mut binding =  sh.borrow_mut();
-                let stdin = binding.stdin.as_mut().unwrap();
+                let mut sh = sh.write().await;
+                let stdin = sh.stdin.as_mut().unwrap();
                 if commands.read_unchecked().is_empty() {
                     return;
                 }
@@ -76,14 +75,11 @@ fn TerminalText(future: Resource<Arc<Mutex<RefCell<Child>>>>) -> Element {
             async move {
                 loop {
                     sleep(Duration::from_millis(10)).await;
-                    let sh = sh.lock().await;
-                    let mut binding = sh.borrow_mut();
-                    let stdout = binding.stdout.as_mut().expect("Failed to get stdout");
-                    
+                    let mut sh = sh.write().await;
+                    let stdout = sh.stdout.as_mut().expect("Failed to get stdout");
                     let mut outBuf = BufReader::new(stdout);
 
                     let Ok( buf) =  timeout(Duration::from_millis(200), outBuf.fill_buf()).await else {
-                        // dbg!("Timeout");
                         continue;
                     };
 
@@ -94,17 +90,16 @@ fn TerminalText(future: Resource<Arc<Mutex<RefCell<Child>>>>) -> Element {
 
                     let buffer_str = &*String::from_utf8_lossy(buf);
                     buffer.write().push_str(buffer_str);
-                    dbg!(buffer_str);
                 }
             }
         });
 
         rsx! {
-            div {  
+            div {
                 style: "display: flex; flex-direction: column; height: 100%;",
                 pre {
-                    style: "background-color: black; color: white; width: 100%; flex: 1; overflow: scroll; 
-                            margin: 0; padding: 0; border: 0; cursor: text; ",
+                    style: "background-color: black; color: white; width: 100%; flex: 1; overflow-y: scroll; 
+                            margin: 0; padding: 0; border: 0; cursor: text; scroll-behavior: smooth;",
                     "{buffer}"
                 }
             
@@ -114,7 +109,6 @@ fn TerminalText(future: Resource<Arc<Mutex<RefCell<Child>>>>) -> Element {
                     
                     oninput: move |event| {
                         let val = event.value();
-                        dbg!("Input: {}", val.clone());
                         *input_text.write() = val.clone();
                     },
                     
