@@ -125,8 +125,15 @@ impl TextFile {
 
     }
 
-    pub fn set_caret_position(&mut self, line: usize, column: usize) {
+    pub fn set_caret_position(&mut self, line: usize, column: usize, selection: bool) {
+        let old_idx = self.char_idx;
         self.char_idx = self.get_char_idx(Caret::from(line, column));
+
+        if selection {
+            self.set_selection(true, old_idx);
+        } else {
+            self.clear_selection();
+        }
     }
     
     pub fn caret_move_left(&mut self) {
@@ -245,6 +252,11 @@ impl TextFile {
     // }
    
     pub fn backspace(&mut self) {
+        if self.selection.is_some() {
+            self.delete_selection();
+            return;
+        }
+
         if self.char_idx == 0 {
             return;
         }
@@ -256,6 +268,11 @@ impl TextFile {
     }
 
     pub fn delete(&mut self) {
+        if self.selection.is_some() {
+            self.delete_selection();
+            return;
+        }
+
         if self.char_idx == self.rope.len_chars() - 1 {
             return;
         }
@@ -265,6 +282,8 @@ impl TextFile {
     }
 
     pub fn insert_char(&mut self, c: char) {
+        self.delete_selection();
+
         // self.rope.insert_char(self.char_idx, c);
         self.apply_new_event(Event::AddChar(c, self.char_idx));
         // self.caret_move_right();
@@ -274,13 +293,37 @@ impl TextFile {
         self.insert_char('\n');
     }
 
+    pub fn insert_string(&mut self, s: &str) {
+        self.delete_selection();
+
+        self.apply_new_event(Event::AddString(s.to_string(), self.char_idx));
+    }
+
+    pub fn get_selection(&self) -> Option<String> {
+        match self.selection {
+            Some((start, end)) => Some(self.rope.slice(start..end).to_string()),
+            None => None,
+        }
+    }
+
     pub fn apply_new_event(&mut self, event: Event) {
         self.event_history.truncate(self.history_idx);
         self.event_history.push(event.clone());
-        self.history_idx += 1;
+
+        // self.delete_selection();
         self.apply_event(event);
 
+        // self.history_idx = self.event_history.len() - 1;
+        self.history_idx += 1;
+
         self.dirty_changes = Some(self.dirty_changes.map(|d| d + 1).unwrap_or(1));
+    }
+
+    pub fn delete_selection(&mut self) {
+        if let Some((start, end)) = self.selection {
+            self.apply_new_event(Event::RemoveString(self.rope.slice(start..end).to_string(), start));
+            self.clear_selection();
+        }
     }
 
     pub fn apply_event(&mut self, event: Event) {
@@ -293,7 +336,15 @@ impl TextFile {
             Event::RemoveChar(_c, idx) => {
                 self.rope.remove(idx .. idx + 1);
                 self.char_idx = idx;
-                // self.caret_move_left();
+            }
+            Event::AddString(s,idx) => {
+                self.rope.insert(idx, &s);
+                let new_idx = idx + s.len();
+                self.char_idx = new_idx;
+            }
+            Event::RemoveString(s, idx) => {
+                self.rope.remove(idx..idx + s.len());
+                self.char_idx = idx;
             }
         }
     }
@@ -311,13 +362,22 @@ impl TextFile {
             Event::AddChar(_c, idx) => {
                 self.rope.remove(idx .. idx + 1);
                 self.char_idx = idx;
-                // self.caret_move_left();
             }
             Event::RemoveChar(c, idx) => {
                 self.rope.insert_char(idx, c);
                 self.char_idx = idx;
                 self.caret_move_right();
             }
+            Event::AddString(s, idx) => {
+                self.rope.remove(idx..idx + s.len());
+                self.char_idx = idx;
+            }
+            Event::RemoveString(s, idx ) => {
+                self.rope.insert(idx, &s);
+                let new_idx = idx + s.len();
+                self.char_idx = new_idx;
+            }
+            
         }
 
         self.history_idx -= 1;

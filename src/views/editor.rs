@@ -31,7 +31,7 @@ pub fn Editor(tabs: Signal<Tabs>) -> Element {
                 info!("unfocused on editor: {:?}", e);
             },
 
-            onkeyup: move |e| {
+            onkeydown: move |e| {
                 
                 let ctrl = e.modifiers().contains(Modifiers::CONTROL);
                 let shift = e.modifiers().contains(Modifiers::SHIFT);
@@ -46,6 +46,10 @@ pub fn Editor(tabs: Signal<Tabs>) -> Element {
                 let old_idx = file.char_idx;
 
                 match (e.key(), ctrl, shift) {
+                    (Key::End, _, _ ) => {
+                        file.delete_selection();
+                    }
+
                     (Key::ArrowLeft, false, selection) => {
                         // file.clear_selection();
                         file.caret_move_left();
@@ -68,21 +72,25 @@ pub fn Editor(tabs: Signal<Tabs>) -> Element {
                         file.set_selection(selection, old_idx);
                     }
 
+                    (Key::Escape, false, _) => {
+                        file.clear_selection();
+                    }
+
                     (Key::Character(s), false, _) => {
                         if let Some(c) = s.chars().next() {
                             info!("inserting char: {:?}", c);
-                            file.clear_selection();
+                            // file.clear_selection();
                             file.insert_char(c);
                         }
                     }
                     
                     (Key::Backspace, false, _) => {
-                        file.clear_selection();
+                        // file.clear_selection();
                         file.backspace();
                     }
 
                     (Key::Delete, false, _) => {
-                        file.clear_selection();
+                        // file.clear_selection();
                         file.delete();
                     }
 
@@ -109,8 +117,11 @@ pub fn Editor(tabs: Signal<Tabs>) -> Element {
                         file.save_to_file();
                     }
 
-                    // (Key::ArrowRight, false, true) => {
-                    //     file.selection_move_right();
+                    // (Key::Character(c), true, false) if &c.to_ascii_lowercase() == "c" => {
+                    //     info!("copy pressed");
+                    //     if let Some(selection) = file.get_selection() {
+
+                    //     }
                     // }
 
                     (_,_,_) => {}
@@ -179,10 +190,6 @@ pub fn EditorLine(
     
     let mut element: Signal<Option<Rc<MountedData>>> = use_signal(|| None);
 
-    let selection = use_memo(move || {
-        tabs.read().get_current_file().map(|f| f.selection).flatten()
-    });
-
     let selection_start = use_memo(move || {
         tabs.read().get_current_file().map(|f| f.selection.map(|s| f.get_caret_from_idx(min(s.0, s.1)))).flatten()
     });
@@ -236,9 +243,10 @@ pub fn EditorLine(
 
             for (i, c) in content.iter().map(|c| if c.clone() != '\n' { c.clone()} else {' '}).enumerate() {
                 span {
-                    onclick: move |_| {
+                    onclick: move |e| {
                         info!("clicked on line: {:?}, col: {:?}, char: {}", line_i, i, c);
-                        tabs.write().get_current_file_mut().map(|file| file.set_caret_position(line_i(), i));
+                        let selection = e.modifiers().contains(Modifiers::SHIFT);
+                        tabs.write().get_current_file_mut().map(|file| file.set_caret_position(line_i(), i, selection));
                     },
             
                     // style: match (i == caret_col() && line_i == caret_line(), line_i == caret_line()) {
@@ -268,10 +276,10 @@ pub fn EditorLine(
 
             span {
                 style: "flex: 1;",
-                onclick: move |_| {
+                onclick: move |e| {
                     info!("clicked on line: {:?}", line_i);
-                    info!("{:?}", content);
-                    tabs.write().get_current_file_mut().map(|file| file.set_caret_position(line_i(), content().len() - 1));
+                    let selection = e.modifiers().contains(Modifiers::SHIFT);
+                    tabs.write().get_current_file_mut().map(|file| file.set_caret_position(line_i(), content().len() - 1, selection));
                 }
             }
         }
