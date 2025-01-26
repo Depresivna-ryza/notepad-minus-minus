@@ -3,6 +3,7 @@ use dioxus::prelude::*;
 use tokio::{io::{AsyncBufReadExt, AsyncWriteExt, BufReader}, process::{Child, Command}, sync::RwLock, time::{sleep, timeout}};
 
 
+
 async fn launch_sh(shell: String) -> Arc<RwLock<Child>> {
     Arc::new(RwLock::new(Command::new(shell)
         .stdin(Stdio::piped())
@@ -16,11 +17,8 @@ async fn launch_sh(shell: String) -> Arc<RwLock<Child>> {
 pub fn Terminal(hidden: Signal<bool>) -> Element {
     let future = use_resource(|| async move {
 
-        let shell = env::var("SHELL")
-            .unwrap_or_else(|_| {
-                dbg!("No SHELL env var found, using cmd");
-                "cmd".to_string()
-            });
+        let shell = "cmd".to_string();
+
 
         sleep(Duration::from_secs(3)).await;
         launch_sh(shell).await

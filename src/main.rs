@@ -1,7 +1,7 @@
 pub mod models;
 pub mod views;
 
-use dotenvy::dotenv;
+use dotenv::dotenv;
 use models::panels::ShownPanels;
 use models::tabs::Tabs;
 use views::editor::Editor;
