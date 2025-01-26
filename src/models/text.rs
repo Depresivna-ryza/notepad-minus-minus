@@ -25,101 +25,56 @@ impl Caret{
             col: 0,
         }
     }
-
-    // pub fn from_rope 
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct TextFile {
     pub path: PathBuf,
-    // pub content: Vec<Vec<char>>,
-    // pub caret: Caret,
     pub rope: Rope,
     pub char_idx: usize,
+
+    event_history: Vec<Event>,
+    history_idx: usize,
+    pub dirty_changes: Option<usize>,
 }
 
 impl TextFile {
     pub fn new(path: PathBuf) -> Self {
         let mut content = read_to_string(&path).ok().unwrap_or(String::new()).replace("\r\n", "\n");
 
-        // add newline if the contents last char is not newline
         if !content.ends_with('\n') {
             content.push('\n');
         }
-
-        // let mut content = content
-        //     .lines()
-        //     .map(|line| line.chars().collect_vec())
-        //     .collect_vec();
-
-        // if content.is_empty() {
-        //     content = vec![Vec::new()];
-        // }
 
         Self {
             path: path,
             rope: Rope::from_str(&content),
             char_idx: 0,
+            event_history: Vec::new(),
+            history_idx: 0,
+            dirty_changes: None,
         }
+    }
+
+    pub fn save_to_file(&mut self) {
+        let content = self.to_string();
+
+        match std::fs::write(&self.path, content) {
+            Ok(_) => {
+                self.dirty_changes = None;
+            }
+            Err(_e) => {
+            }
+        }
+        
     }
 
     pub fn to_string(&self) -> String {
-        // self.content
-        //     .iter()
-        //     .map(|line| line.iter().collect())
-        //     .collect::<Vec<String>>()
-        //     .join("\n")
         self.rope.to_string()
     }
 
-    // pub fn lines(&self) -> Vec<String> {
-    //     // self.content
-    //     //     .iter()
-    //     //     .map(|line| line.iter().collect())
-    //     //     .collect()
-    //     self.rope.lines().map(|line| line.to_string()).collect()
-    // }
-
     pub fn chars(&self) -> Vec<Vec<char>> {
-        // self.content
-        //     .iter()
-        //     .map(|line| line.iter().collect())
-        //     .collect()
         self.rope.lines().map(|line| line.chars().collect::<Vec<char>>()).filter(|l| !l.is_empty()).collect()
-    }
-
-    pub fn caret_move_left(&mut self) {
-        // match (self.caret.ln, self.caret.col) {
-        //     (_, c) if c > 0 => self.caret.col -= 1,
-        //     (l, _) if l > 0 => {
-        //         self.caret.ln -= 1;
-        //         self.caret.col = match self.get_cols(self.caret.ln){
-        //             0 => 0,
-        //             c => c - 1
-        //         }
-        //     }
-        //     _ => {}
-        // }
-
-        self.char_idx = match self.char_idx {
-            0 => 0,
-            i => i - 1,
-        }
-    }
-
-    pub fn caret_move_right(&mut self) {
-        // match (self.caret.ln, self.caret.col) {
-        //     (l, c) if c < self.get_cols(l) => self.caret.col += 1,
-        //     (l, _) if l + 1 < self.content.len() => {
-        //         self.caret.ln += 1;
-        //         self.caret.col = 0;
-        //     }
-        //     _ => {}
-        // }
-        self.char_idx = match self.char_idx {
-            i if i + 1 < self.rope.len_chars() => i + 1,
-            _ => self.rope.len_chars() - 1,
-        }
     }
 
     pub fn get_caret(&self) -> Caret {
@@ -150,6 +105,25 @@ impl TextFile {
 
     }
 
+    pub fn set_caret_position(&mut self, line: usize, column: usize) {
+        self.char_idx = self.get_char_idx(Caret::from(line, column));
+    }
+    
+    pub fn caret_move_left(&mut self) {
+        self.char_idx = match self.char_idx {
+            0 => 0,
+            i => i - 1,
+        }
+    }
+
+    pub fn caret_move_right(&mut self) {
+
+        self.char_idx = match self.char_idx {
+            i if i + 1 < self.rope.len_chars() => i + 1,
+            _ => self.rope.len_chars() - 1,
+        }
+    }
+
     pub fn caret_move_down(&mut self) {
         let caret = self.get_caret();
 
@@ -169,9 +143,6 @@ impl TextFile {
             self.char_idx = self.rope.len_chars() - 1;
             return;
         }
-        
-
-        // self.char_idx = min(self.char_idx + next_line.len_chars(), self.content.len_chars());
 
         if caret.col < next_line.len_chars() {
             self.char_idx += line.len_chars();
@@ -181,11 +152,6 @@ impl TextFile {
     }
 
     pub fn caret_move_up(&mut self) {
-        // if self.caret.ln > 0 {
-        //     self.caret.ln -= 1;
-        //     self.caret.col = self.caret.col.min(self.get_cols(self.caret.ln));
-        // }
-
         let caret = self.get_caret();
 
         if caret.ln == 0 {
@@ -209,45 +175,14 @@ impl TextFile {
     }
    
     pub fn backspace(&mut self) {
-        // let Some(line) = self.content.get(self.caret.ln) else { 
-        //     return; 
-        // };
-
-        // match self.caret.col {
-        //     0 => {
-
-        //     }
-        //     c => {
-
-        //     }
-        // }
-        
-
-        // self.apply_event(Event::RemoveChar(self.caret));
-
-        // match (self.caret.ln, self.caret.col) {
-        //     (l, c) if c > 0 => {
-        //         self.content[l].remove(c - 1);
-        //         self.caret_move_left();
-        //     }
-        //     (l, _) if l > 0 => {
-        //         let right_part: Vec<char> = self.content[l].drain(..).collect();
-
-        //         self.caret.ln -= 1;
-        //         self.caret.col = self.get_cols(self.caret.ln);
-        //         self.content[self.caret.ln].extend(right_part);
-        //         self.content.remove(self.caret.ln + 1);
-        //     }
-        //     (_,_) => {}
-        // }
-
-
         if self.char_idx == 0 {
             return;
         }
 
-        self.rope.remove(self.char_idx - 1 ..self.char_idx);
-        self.caret_move_left();
+        // self.rope.remove(self.char_idx - 1 .. self.char_idx);
+        self.apply_new_event(Event::RemoveChar(self.rope.char(self.char_idx - 1), self.char_idx - 1));
+
+        // self.caret_move_left();
     }
 
     pub fn delete(&mut self) {
@@ -255,53 +190,82 @@ impl TextFile {
             return;
         }
 
-        self.rope.remove(self.char_idx..self.char_idx + 1);
+        // self.rope.remove(self.char_idx..self.char_idx + 1);
+        self.apply_new_event(Event::RemoveChar(self.rope.char(self.char_idx), self.char_idx));
     }
 
     pub fn insert_char(&mut self, c: char) {
-        // self.apply_event(Event::AddChar(c, self.caret));
-
-        // self.content[caret.ln].insert(caret.col, c);
+        // self.rope.insert_char(self.char_idx, c);
+        self.apply_new_event(Event::AddChar(c, self.char_idx));
         // self.caret_move_right();
-
-        self.rope.insert_char(self.char_idx, c);
-        self.caret_move_right();
     }
 
     pub fn insert_newline(&mut self) {
-        // let right_part: Vec<char> = self.rope[self.caret.ln]
-        //     .drain(self.caret.col..)
-        //     .collect();
-        // self.rope.insert(self.caret.ln + 1, right_part);
-
-        // self.caret_move_right();
-
         self.insert_char('\n');
     }
 
-    pub fn set_caret_position(&mut self, line: usize, column: usize) {
-        // self.caret.ln = max(0, min(line, self.rope.len() - 1));
-        // self.caret.col = max(0, min(column, self.get_cols(self.caret.ln)));
+    pub fn apply_new_event(&mut self, event: Event) {
+        self.event_history.truncate(self.history_idx);
+        self.event_history.push(event.clone());
+        self.history_idx += 1;
+        self.apply_event(event);
 
-        self.char_idx = self.get_char_idx(Caret::from(line, column));
-
+        self.dirty_changes = Some(self.dirty_changes.map(|d| d + 1).unwrap_or(1));
     }
 
-
     pub fn apply_event(&mut self, event: Event) {
-        // match event {
-        //     Event::AddChar(c, caret) => {
-        //         self.rope[caret.ln].insert(caret.col, c);
-        //         self.set_caret_position(caret.ln, caret.col);
-        //         self.caret_move_right();
+        match event {
+            Event::AddChar(c, idx) => {
+                self.rope.insert_char(idx, c);
+                self.char_idx = idx;
+                self.caret_move_right();
+            }
+            Event::RemoveChar(_c, idx) => {
+                self.rope.remove(idx .. idx + 1);
+                self.char_idx = idx;
+                // self.caret_move_left();
+            }
+        }
+    }
 
-        //     }
-        //     Event::RemoveChar(_, _) => {
+    pub fn undo_event(&mut self) {
+        if self.history_idx == 0 {
+            return;
+        }
 
-        //     }
-        //     Event::AddNewLine(_) => {
+        let Some(event) = self.event_history.get(self.history_idx - 1).cloned() else {
+            return;
+        };
 
-        //     }
-        // }
+        match event {
+            Event::AddChar(_c, idx) => {
+                self.rope.remove(idx .. idx + 1);
+                self.char_idx = idx;
+                // self.caret_move_left();
+            }
+            Event::RemoveChar(c, idx) => {
+                self.rope.insert_char(idx, c);
+                self.char_idx = idx;
+                self.caret_move_right();
+            }
+        }
+
+        self.history_idx -= 1;
+        self.dirty_changes = Some(self.dirty_changes.and_then(|d| d.checked_sub(1)).unwrap_or(0));
+    }
+
+    pub fn redo_event(&mut self) {
+        if self.history_idx == self.event_history.len() {
+            return;
+        }
+
+        let Some(event) = self.event_history.get(self.history_idx).cloned() else {
+            return;
+        };
+
+        self.apply_event(event);
+        self.history_idx += 1;
+
+        self.dirty_changes = Some(self.dirty_changes.map(|d| d + 1).unwrap_or(1));
     }
 }
