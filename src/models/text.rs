@@ -225,32 +225,7 @@ impl TextFile {
         }
     }
 
-    // pub fn selection_move_right(&mut self) {
-    //     let old_idx = self.char_idx;
-    //     self.caret_move_right();
 
-    //     match self.selection {
-    //         None => {
-    //             self.selection = Some((old_idx, self.char_idx));
-    //         }
-
-    //         Some((start, end)) if self.char_idx > end => {
-    //             self.selection = Some((start, self.char_idx));
-    //         }
-
-    //         Some((_start, end)) if self.char_idx < end => {
-    //             self.selection = Some((self.char_idx, end));
-    //         }
-
-    //         Some((_start, end)) if self.char_idx == end => {
-    //             self.selection = None;
-    //         }
-
-    //         _ => {}
-
-    //     }
-    // }
-   
     pub fn backspace(&mut self) {
         if self.selection.is_some() {
             self.delete_selection();
@@ -261,10 +236,7 @@ impl TextFile {
             return;
         }
 
-        // self.rope.remove(self.char_idx - 1 .. self.char_idx);
         self.apply_new_event(Event::RemoveChar(self.rope.char(self.char_idx - 1), self.char_idx - 1));
-
-        // self.caret_move_left();
     }
 
     pub fn delete(&mut self) {
@@ -277,16 +249,13 @@ impl TextFile {
             return;
         }
 
-        // self.rope.remove(self.char_idx..self.char_idx + 1);
         self.apply_new_event(Event::RemoveChar(self.rope.char(self.char_idx), self.char_idx));
     }
 
     pub fn insert_char(&mut self, c: char) {
         self.delete_selection();
 
-        // self.rope.insert_char(self.char_idx, c);
         self.apply_new_event(Event::AddChar(c, self.char_idx));
-        // self.caret_move_right();
     }
 
     pub fn insert_newline(&mut self) {
@@ -301,19 +270,22 @@ impl TextFile {
 
     pub fn get_selection(&self) -> Option<String> {
         match self.selection {
-            Some((start, end)) => Some(self.rope.slice(start..=end).to_string()),
+            Some((start, end)) => {
+                let s = min(start, end);
+                let e = max(start, end);
+                Some(self.rope.slice(s..=e).to_string())
+            }
             None => None,
         }
     }
 
     pub fn apply_new_event(&mut self, event: Event) {
         self.event_history.truncate(self.history_idx);
+
         self.event_history.push(event.clone());
 
-        // self.delete_selection();
         self.apply_event(event);
 
-        // self.history_idx = self.event_history.len() - 1;
         self.history_idx += 1;
 
         self.dirty_changes = Some(self.dirty_changes.map(|d| d + 1).unwrap_or(1));
@@ -321,7 +293,12 @@ impl TextFile {
 
     pub fn delete_selection(&mut self) {
         if let Some((start, end)) = self.selection {
-            self.apply_new_event(Event::RemoveString(self.rope.slice(start..end).to_string(), start));
+
+            let s = min(start, end);
+            let e = max(start, end); 
+
+            self.apply_new_event(Event::RemoveString(self.rope.slice(s..e).to_string(), s));
+
             self.clear_selection();
         }
     }

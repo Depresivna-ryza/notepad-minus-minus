@@ -4,7 +4,6 @@ use crate::models::{tabs::Tabs, text::{Caret, TextFile}};
 
 use arboard::Clipboard;
 use dioxus::prelude::*;
-use dioxus_elements::{geometry::{euclid::{Size2D, Vector2D}, Pixels}, span};
 use tracing::info;
 
 #[component]
@@ -52,23 +51,19 @@ pub fn Editor(tabs: Signal<Tabs>) -> Element {
                     }
 
                     (Key::ArrowLeft, false, selection) => {
-                        // file.clear_selection();
                         file.caret_move_left();
 
                         file.set_selection(selection, old_idx);
                     }
                     (Key::ArrowRight, false, selection) => {
-                        // file.clear_selection();
                         file.caret_move_right();
                         file.set_selection(selection, old_idx);
                     }
                     (Key::ArrowUp, false, selection) => {
-                        // file.clear_selection();
                         file.caret_move_up();
                         file.set_selection(selection, old_idx);
                     }
                     (Key::ArrowDown, false, selection) => {
-                        // file.clear_selection();
                         file.caret_move_down();
                         file.set_selection(selection, old_idx);
                     }
@@ -80,18 +75,15 @@ pub fn Editor(tabs: Signal<Tabs>) -> Element {
                     (Key::Character(s), false, _) => {
                         if let Some(c) = s.chars().next() {
                             info!("inserting char: {:?}", c);
-                            // file.clear_selection();
                             file.insert_char(c);
                         }
                     }
                     
                     (Key::Backspace, false, _) => {
-                        // file.clear_selection();
                         file.backspace();
                     }
 
                     (Key::Delete, false, _) => {
-                        // file.clear_selection();
                         file.delete();
                     }
 
@@ -268,17 +260,11 @@ pub fn EditorLine(
                         let selection = e.modifiers().contains(Modifiers::SHIFT);
                         tabs.write().get_current_file_mut().map(|file| file.set_caret_position(line_i(), i, selection));
                     },
-            
-                    // style: match (i == caret_col() && line_i == caret_line(), line_i == caret_line()) {
-                    //     (true, true) => "font-family: monospace; background-color: yellow; font-size: 16px; white-space: pre",
-                    //     _ => "font-family: monospace; font-size: 16px; white-space: pre"
-                    // },
 
                     style: "font-family: monospace; font-size: 16px; white-space: pre".to_string() + 
                         if i == caret_col() && line_i == caret_line() {
                             "; background-color: yellow;"
                         } else if let (Some(start), Some(end)) = (selection_start(), selection_end()) {
-                            // if start.col <= i && i <= end.col && start.ln <= line_i() && line_i() <= end.ln {
                             if (start.ln < line_i() && line_i() < end.ln ) || 
                                 (start.ln == line_i() && line_i() == end.ln && start.col <= i && i <= end.col) ||
                                 (start.ln == line_i() && line_i() < end.ln && start.col <= i) ||
