@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::{cmp::{max, min}, rc::Rc};
 
 use crate::models::{tabs::Tabs, text::{Caret, TextFile}};
 
@@ -38,53 +38,80 @@ pub fn Editor(tabs: Signal<Tabs>) -> Element {
 
                 info!("key pressed: {:?}, ctrl: {}, shift: {}", e.key(), ctrl, shift);
 
+                let mut tabss = tabs.write();
+                let Some(ref mut file) = tabss.get_current_file_mut() else {
+                    return;
+                };
+
+                let old_idx = file.char_idx;
+
                 match (e.key(), ctrl, shift) {
-                    (Key::ArrowLeft, false, _) => {
-                        tabs.write().get_current_file_mut().map(|file| file.caret_move_left());
+                    (Key::ArrowLeft, false, selection) => {
+                        // file.clear_selection();
+                        file.caret_move_left();
+
+                        file.set_selection(selection, old_idx);
                     }
-                    (Key::ArrowRight, false, _) => {
-                        tabs.write().get_current_file_mut().map(|file| file.caret_move_right());
+                    (Key::ArrowRight, false, selection) => {
+                        // file.clear_selection();
+                        file.caret_move_right();
+                        file.set_selection(selection, old_idx);
                     }
-                    (Key::ArrowUp, false, _) => {
-                        tabs.write().get_current_file_mut().map(|file| file.caret_move_up());
+                    (Key::ArrowUp, false, selection) => {
+                        // file.clear_selection();
+                        file.caret_move_up();
+                        file.set_selection(selection, old_idx);
                     }
-                    (Key::ArrowDown, false, _) => {
-                        tabs.write().get_current_file_mut().map(|file| file.caret_move_down());
+                    (Key::ArrowDown, false, selection) => {
+                        // file.clear_selection();
+                        file.caret_move_down();
+                        file.set_selection(selection, old_idx);
                     }
 
                     (Key::Character(s), false, _) => {
-                        if let Some(c) = s.chars().next(){
+                        if let Some(c) = s.chars().next() {
                             info!("inserting char: {:?}", c);
-                            tabs.write().get_current_file_mut().map(|file| file.insert_char(c));
+                            file.clear_selection();
+                            file.insert_char(c);
                         }
                     }
-
+                    
                     (Key::Backspace, false, _) => {
-                        tabs.write().get_current_file_mut().map(|file| file.backspace());
+                        file.clear_selection();
+                        file.backspace();
                     }
 
                     (Key::Delete, false, _) => {
-                        tabs.write().get_current_file_mut().map(|file| file.delete());
+                        file.clear_selection();
+                        file.delete();
                     }
 
                     (Key::Enter, false, _) => {
-                        tabs.write().get_current_file_mut().map(|file| file.insert_newline());
+                        file.clear_selection();
+                        file.insert_newline();
                     }
 
                     (Key::Character(z), true, false) if &z.to_ascii_lowercase() == "z" => {
                         info!("undo pressed");
-                        tabs.write().get_current_file_mut().map(|file| file.undo_event());
+                        file.clear_selection();
+                        file.undo_event();
                     }
 
                     (Key::Character(z), true, true) if &z.to_ascii_lowercase() == "z" => {
                         info!("redo pressed");
-                        tabs.write().get_current_file_mut().map(|file| file.redo_event());
+                        file.clear_selection();
+                        file.redo_event();
                     }
 
                     (Key::Character(s), true, false) if &s.to_ascii_lowercase() == "s" => {
                         info!("save pressed");
-                        tabs.write().get_current_file_mut().map(|file| file.save_to_file());
+                        file.clear_selection();
+                        file.save_to_file();
                     }
+
+                    // (Key::ArrowRight, false, true) => {
+                    //     file.selection_move_right();
+                    // }
 
                     (_,_,_) => {}
                 }
@@ -152,6 +179,18 @@ pub fn EditorLine(
     
     let mut element: Signal<Option<Rc<MountedData>>> = use_signal(|| None);
 
+    let selection = use_memo(move || {
+        tabs.read().get_current_file().map(|f| f.selection).flatten()
+    });
+
+    let selection_start = use_memo(move || {
+        tabs.read().get_current_file().map(|f| f.selection.map(|s| f.get_caret_from_idx(min(s.0, s.1)))).flatten()
+    });
+
+    let selection_end = use_memo(move || {
+        tabs.read().get_current_file().map(|f| f.selection.map(|s| f.get_caret_from_idx(max(s.0, s.1)))).flatten()
+    });
+
     let _ = use_resource(move || async move {
         if line_i == caret_line() {
             if let Some(ref elem) = *element.read() {
@@ -202,10 +241,27 @@ pub fn EditorLine(
                         tabs.write().get_current_file_mut().map(|file| file.set_caret_position(line_i(), i));
                     },
             
-                    style: match (i == caret_col() && line_i == caret_line(), line_i == caret_line()) {
-                        (true, true) => "font-family: monospace; background-color: yellow; font-size: 16px; white-space: pre",
-                        _ => "font-family: monospace; font-size: 16px; white-space: pre"
-                    },
+                    // style: match (i == caret_col() && line_i == caret_line(), line_i == caret_line()) {
+                    //     (true, true) => "font-family: monospace; background-color: yellow; font-size: 16px; white-space: pre",
+                    //     _ => "font-family: monospace; font-size: 16px; white-space: pre"
+                    // },
+
+                    style: "font-family: monospace; font-size: 16px; white-space: pre".to_string() + 
+                        if i == caret_col() && line_i == caret_line() {
+                            "; background-color: yellow;"
+                        } else if let (Some(start), Some(end)) = (selection_start(), selection_end()) {
+                            // if start.col <= i && i <= end.col && start.ln <= line_i() && line_i() <= end.ln {
+                            if (start.ln < line_i() && line_i() < end.ln ) || 
+                                (start.ln == line_i() && line_i() == end.ln && start.col <= i && i <= end.col) ||
+                                (start.ln == line_i() && line_i() < end.ln && start.col <= i) ||
+                                (start.ln < line_i() && line_i() == end.ln && i <= end.col) {
+                                "; background-color: lightblue;"
+                            } else {
+                                ""
+                            }
+                        } else {
+                            ""
+                        },
                     "{c}"
                 }
             }

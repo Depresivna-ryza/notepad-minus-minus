@@ -1,6 +1,7 @@
 use std::{cmp::{max, min}, fs::read_to_string, path::{Path, PathBuf}};
 
 use itertools::Itertools;
+use tracing::info;
 
 use super::event::Event;
 use ropey::Rope;
@@ -36,6 +37,8 @@ pub struct TextFile {
     event_history: Vec<Event>,
     history_idx: usize,
     pub dirty_changes: Option<usize>,
+
+    pub selection: Option<(usize, usize)>,
 }
 
 impl TextFile {
@@ -53,6 +56,7 @@ impl TextFile {
             event_history: Vec::new(),
             history_idx: 0,
             dirty_changes: None,
+            selection: None,
         }
     }
 
@@ -66,7 +70,6 @@ impl TextFile {
             Err(_e) => {
             }
         }
-        
     }
 
     pub fn to_string(&self) -> String {
@@ -93,6 +96,22 @@ impl TextFile {
         Caret::from(self.rope.len_lines() - 1, self.rope.line(self.rope.len_lines() - 1).len_chars())
     }
 
+    pub fn get_caret_from_idx(&self, idx: usize) -> Caret {
+        let mut char_sum = 0;
+
+        for (i, line) in self.rope.lines().enumerate() {
+            char_sum += line.len_chars();
+            if char_sum > idx {
+                let caret_ln = i;
+                let caret_col = idx - (char_sum - line.len_chars());
+                return Caret::from(caret_ln, caret_col);
+            }
+        }
+
+        Caret::from(self.rope.len_lines() - 1, self.rope.line(self.rope.len_lines() - 1).len_chars())
+    }
+
+
     pub fn get_char_idx(&self, caret: Caret) -> usize {
         let mut char_sum = 0;
         for (i, line) in self.rope.lines().enumerate() {
@@ -101,7 +120,8 @@ impl TextFile {
             }
             char_sum += line.len_chars();
         }
-        panic!("invalid caret in rope");
+        
+        self.rope.len_chars() - 1
 
     }
 
@@ -117,11 +137,11 @@ impl TextFile {
     }
 
     pub fn caret_move_right(&mut self) {
-
         self.char_idx = match self.char_idx {
             i if i + 1 < self.rope.len_chars() => i + 1,
             _ => self.rope.len_chars() - 1,
-        }
+        };
+
     }
 
     pub fn caret_move_down(&mut self) {
@@ -173,6 +193,56 @@ impl TextFile {
             self.char_idx -= caret.col + 1;
         }
     }
+
+    pub fn clear_selection(&mut self) {
+        self.selection = None;
+    }
+
+    pub fn set_selection(&mut self, selection: bool, old_idx: usize) {
+        match (selection, self.selection) {
+            (true, Some((_start, end))) if self.char_idx == end => {
+                self.selection = None;
+            }
+
+            (true, None) => {
+                self.selection = Some((old_idx, self.char_idx));
+            }
+
+            (true, Some((start, _end))) => {
+                self.selection = Some((start, self.char_idx));
+            }
+
+            (false, _) => {
+                self.selection = None;
+            }
+        }
+    }
+
+    // pub fn selection_move_right(&mut self) {
+    //     let old_idx = self.char_idx;
+    //     self.caret_move_right();
+
+    //     match self.selection {
+    //         None => {
+    //             self.selection = Some((old_idx, self.char_idx));
+    //         }
+
+    //         Some((start, end)) if self.char_idx > end => {
+    //             self.selection = Some((start, self.char_idx));
+    //         }
+
+    //         Some((_start, end)) if self.char_idx < end => {
+    //             self.selection = Some((self.char_idx, end));
+    //         }
+
+    //         Some((_start, end)) if self.char_idx == end => {
+    //             self.selection = None;
+    //         }
+
+    //         _ => {}
+
+    //     }
+    // }
    
     pub fn backspace(&mut self) {
         if self.char_idx == 0 {
