@@ -7,7 +7,7 @@ use models::tabs::Tabs;
 use views::editor::Editor;
 use views::fileexplorer::FileExplorer;
 use views::sessionexplorer::SessionsExplorer;
-use views::side_panel::{SidePanel};
+use views::side_panel::SidePanel;
 use views::tabs::EditorTabs;
 
 use dioxus::prelude::*;

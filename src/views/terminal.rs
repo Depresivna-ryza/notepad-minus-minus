@@ -1,8 +1,6 @@
 use std::{cell::RefCell, env, process::Stdio, sync::Arc, time::Duration, vec};
-
-
 use dioxus::prelude::*;
-use tokio::{io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader}, process::{Child, Command}, sync::Mutex, time::{sleep, timeout}};
+use tokio::{io::{AsyncBufReadExt, AsyncWriteExt, BufReader}, process::{Child, Command}, sync::Mutex, time::{sleep, timeout}};
 
 
 async fn launch_sh(shell: String) -> Arc<Mutex<RefCell<Child>>> {
@@ -16,9 +14,6 @@ async fn launch_sh(shell: String) -> Arc<Mutex<RefCell<Child>>> {
 
 #[component]
 pub fn Terminal(hidden: Signal<bool>) -> Element {
-
-    dbg!(hidden.peek());
-    
     let future = use_resource(|| async move {
 
         let shell = env::var("SHELL")
@@ -76,7 +71,7 @@ fn TerminalText(future: Resource<Arc<Mutex<RefCell<Child>>>>) -> Element {
         });
 
         let read_rc = Arc::clone(sh1); //idk how to to it nicely :/
-        let _ = use_resource(move || { //pulling commands from stdout
+        use_future(move || { //pulling commands from stdout
             let sh = Arc::clone(&read_rc); //idk how to to it nicely :/
             async move {
                 loop {
