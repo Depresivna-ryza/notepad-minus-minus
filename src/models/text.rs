@@ -293,15 +293,15 @@ impl TextFile {
         self.insert_char('\n');
     }
 
-    pub fn insert_string(&mut self, s: &str) {
+    pub fn insert_string(&mut self, s: String) {
         self.delete_selection();
 
-        self.apply_new_event(Event::AddString(s.to_string(), self.char_idx));
+        self.apply_new_event(Event::AddString(s, self.char_idx));
     }
 
     pub fn get_selection(&self) -> Option<String> {
         match self.selection {
-            Some((start, end)) => Some(self.rope.slice(start..end).to_string()),
+            Some((start, end)) => Some(self.rope.slice(start..=end).to_string()),
             None => None,
         }
     }
