@@ -6,7 +6,7 @@ use crate::models::{
 };
 
 use dioxus::prelude::*;
-use rfd::FileDialog;
+use rfd::{AsyncFileDialog, FileDialog};
 use tracing::info;
 
 #[component]
@@ -14,9 +14,9 @@ pub fn FileExplorer(tabs: Signal<Tabs>) -> Element {
     let mut file_system_state = use_context_provider(|| Signal::new(FileSystem::new()));
     use_context_provider(|| tabs);
 
-    let change_root_directory = move |_| {
-        if let Some(dir_path) = FileDialog::new().pick_folder() {
-            let mut root_dir = Dir::new(dir_path);
+    let change_root_directory = move |_| async move {
+        if let Some(dir_path) = AsyncFileDialog::new().pick_folder().await {
+            let mut root_dir = Dir::new(dir_path.path().to_path_buf());
             root_dir.open();
             file_system_state.replace(FileSystem::from(root_dir));
         }
