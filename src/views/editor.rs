@@ -3,7 +3,7 @@ use std::rc::Rc;
 use crate::models::{tabs::Tabs, text::{Caret, TextFile}};
 
 use dioxus::prelude::*;
-use dioxus_elements::geometry::{euclid::{Size2D, Vector2D}, Pixels};
+use dioxus_elements::{geometry::{euclid::{Size2D, Vector2D}, Pixels}, span};
 use tracing::info;
 
 #[component]
@@ -32,48 +32,67 @@ pub fn Editor(tabs: Signal<Tabs>) -> Element {
             },
 
             onkeyup: move |e| {
-                info!("key pressed: {:?}", e.key());
+                
+                let ctrl = e.modifiers().contains(Modifiers::CONTROL);
+                let shift = e.modifiers().contains(Modifiers::SHIFT);
 
-                match e.key() {
-                    Key::ArrowLeft => {
+                info!("key pressed: {:?}, ctrl: {}, shift: {}", e.key(), ctrl, shift);
+
+                match (e.key(), ctrl, shift) {
+                    (Key::ArrowLeft, false, _) => {
                         tabs.write().get_current_file_mut().map(|file| file.caret_move_left());
                     }
-                    Key::ArrowRight => {
+                    (Key::ArrowRight, false, _) => {
                         tabs.write().get_current_file_mut().map(|file| file.caret_move_right());
                     }
-                    Key::ArrowUp => {
+                    (Key::ArrowUp, false, _) => {
                         tabs.write().get_current_file_mut().map(|file| file.caret_move_up());
                     }
-                    Key::ArrowDown => {
+                    (Key::ArrowDown, false, _) => {
                         tabs.write().get_current_file_mut().map(|file| file.caret_move_down());
                     }
 
-                    Key::Character(s) => {
+                    (Key::Character(s), false, _) => {
                         if let Some(c) = s.chars().next(){
                             info!("inserting char: {:?}", c);
                             tabs.write().get_current_file_mut().map(|file| file.insert_char(c));
                         }
                     }
 
-                    Key::Backspace => {
+                    (Key::Backspace, false, _) => {
                         tabs.write().get_current_file_mut().map(|file| file.backspace());
                     }
 
-                    Key::Delete => {
+                    (Key::Delete, false, _) => {
                         tabs.write().get_current_file_mut().map(|file| file.delete());
                     }
 
-                    Key::Enter => {
+                    (Key::Enter, false, _) => {
                         tabs.write().get_current_file_mut().map(|file| file.insert_newline());
                     }
 
-                    _ => {}
+                    (Key::Character(z), true, false) if &z.to_ascii_lowercase() == "z" => {
+                        info!("undo pressed");
+                        tabs.write().get_current_file_mut().map(|file| file.undo_event());
+                    }
+
+                    (Key::Character(z), true, true) if &z.to_ascii_lowercase() == "z" => {
+                        info!("redo pressed");
+                        tabs.write().get_current_file_mut().map(|file| file.redo_event());
+                    }
+
+                    (Key::Character(s), true, false) if &s.to_ascii_lowercase() == "s" => {
+                        info!("save pressed");
+                        tabs.write().get_current_file_mut().map(|file| file.save_to_file());
+                    }
+
+                    (_,_,_) => {}
                 }
 
             },
 
             style: "display: flex; flex-direction: column; flex: 1; justify-content: space-between; height: 10px;",
-            TopStatusBar {tabs, text},
+            TopStatusBar {tabs},
             EditorText {tabs, text, caret_col: caret_col(), caret_line: caret_line()},
             BottomStatusBar {tabs, caret_col: caret_col(), caret_line: caret_line(), char_idx: text.read().clone().map_or(0, |t| t.char_idx)},
         }
@@ -204,7 +223,7 @@ pub fn EditorLine(
 }
 
 #[component]
-pub fn TopStatusBar(tabs: ReadOnlySignal<Tabs>, text: Memo<Option<TextFile>>) -> Element {
+pub fn TopStatusBar(tabs: Signal<Tabs>) -> Element {
     let path: Option<Vec<String>> = tabs()
         .current_file
         .map(|p| p.iter().map(|p| p.to_string_lossy().to_string()).collect());
@@ -214,6 +233,10 @@ pub fn TopStatusBar(tabs: ReadOnlySignal<Tabs>, text: Memo<Option<TextFile>>) ->
             style: "background-color: blue; height: 40px; display: flex; justify-content: space-between; align-items: center; ",
             Breadcrumbs {path},
             button {
+                onclick: move |_| {
+                    tabs.write().get_current_file_mut().map(|file| file.save_to_file());
+                },
+
                 style: "margin-right: 10px; flex-shrink: 0;",
                 "Save"
             }
@@ -232,8 +255,25 @@ pub fn BottomStatusBar(
         div {
             style: "background-color: blue; height: 30px; display: flex; justify-content: flex-end; align-items: center;",
             span {
+                style: "margin-right: 10px;",
+                if let Some(ref f) = tabs.read().get_current_file() {
+                    if let Some(x) = f.dirty_changes {
+                        "{x} unsaved changes"
+                    } else {
+                        "(no changes)"
+                    }
+                } else {
+                    ""
+                }
+            }
+            
+            div {
+                style: "flex: 1;",
+            }
+
+            span {
                 style: "margin-left: 10px;",
-                "Line: {caret_line}, Col: {caret_col} || Char: {char_idx}"
+                "Line: {caret_line}, Col: {caret_col} | Char: {char_idx}"
             }
         }
     }

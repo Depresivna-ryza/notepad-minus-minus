@@ -1,7 +1,6 @@
-use super::text::Caret;
 
+#[derive(Debug, Clone, PartialEq)]
 pub enum Event {
-    AddChar(char, Caret),
-    RemoveChar(char, Caret),
-    AddNewLine(Caret),
+    AddChar(char, usize),
+    RemoveChar(char, usize),
 }
