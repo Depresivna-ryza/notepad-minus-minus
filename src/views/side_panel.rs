@@ -36,7 +36,7 @@ pub fn SidePanel(shown_panels: ShownPanels) -> Element {
                 icon: Shape::CommandLine,
                 on_click: move || { 
                     println!("Terminal clicked"); 
-                    let val = shown_panels.terminal.read().clone();
+                    let val = *shown_panels.terminal.read();
                     shown_panels.terminal.set(!val);
                     println!("Terminal value: {}", shown_panels.terminal.peek());
                 }

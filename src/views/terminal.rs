@@ -1,20 +1,17 @@
-use std::{cell::RefCell, env, io::stdout, ops::DerefMut, process::{ChildStdout, Stdio}, rc::Rc, sync::{mpsc::{channel, Receiver}, Arc}, time::Duration, vec};
+use std::{cell::RefCell, env, process::Stdio, sync::Arc, time::Duration, vec};
 
 
 use dioxus::prelude::*;
-use dioxus_elements::div;
-use svg_attributes::d;
-use tokio::{io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader}, process::{Child, Command}, sync::{ RwLock}, time::{sleep, timeout}};
-use tracing::info;
+use tokio::{io::{AsyncBufReadExt, AsyncReadExt, AsyncWriteExt, BufReader}, process::{Child, Command}, sync::Mutex, time::{sleep, timeout}};
 
 
-async fn launch_sh(shell: String) -> Arc<RwLock<Child>> {
-    Arc::new(RwLock::new(Command::new(shell)
+async fn launch_sh(shell: String) -> Arc<Mutex<RefCell<Child>>> {
+    Arc::new(Mutex::new(RefCell::new(Command::new(shell)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
         .spawn()
-        .expect("Failed to start sh")))
+        .expect("Failed to start sh"))))
 }
 
 #[component]
@@ -55,28 +52,27 @@ fn TerminalLoading() -> Element {
 }
 
 #[component]
-fn TerminalText(future: Resource<Arc<RwLock<Child>>>) -> Element {
+fn TerminalText(future: Resource<Arc<Mutex<RefCell<Child>>>>) -> Element {
     if let Some(ref sh1) = *future.read_unchecked() {
         let mut buffer = use_signal(|| "".to_string());
         let mut input_text = use_signal(|| "".to_string());
         let mut commands = use_signal(|| "".to_string());
-        let (tx, mut rx) = channel::<String>();
 
         let write_rc = Arc::clone(sh1); //idk how to to it nicely :/
-        //pushing commands to stdin
-        tokio::spawn(async move {
-                loop {
-                    sleep(Duration::from_millis(10)).await;
-                    if let Ok(val) = rx.recv() {
-                        let mut sh = write_rc.write().await;
-                        // let mut binding =  sh.deref_mut();
-                        let stdin = sh.stdin.as_mut().unwrap();
-                        let res = stdin.write_all(val.as_bytes()).await.expect("Failed to write to stdin");
-                        // dbg!(commands.peek());
-                        dbg!(res);
-                        dbg!(val);
-                    }
+        let _ = use_resource(move ||{ //pushing commands to stdin
+            let sh = Arc::clone(&write_rc); //idk how to to it nicely :/
+            async move {
+                let sh = sh.lock().await;
+                let mut binding =  sh.borrow_mut();
+                let stdin = binding.stdin.as_mut().unwrap();
+                if commands.read_unchecked().is_empty() {
+                    return;
                 }
+                stdin.write_all(commands.read_unchecked().as_bytes())
+                    .await.expect("Failed to write to stdin");
+                stdin.flush().await.expect("Failed to flush stdin");
+                dbg!(commands.read());
+            }
         });
 
         let read_rc = Arc::clone(sh1); //idk how to to it nicely :/
@@ -84,17 +80,20 @@ fn TerminalText(future: Resource<Arc<RwLock<Child>>>) -> Element {
             let sh = Arc::clone(&read_rc); //idk how to to it nicely :/
             async move {
                 loop {
-                    sleep(Duration::from_millis(10000)).await;
-                    let mut sh = sh.write().await;
-                    let stdout = sh.stdout.as_mut().expect("Failed to get stdout");
-                    dbg!("Reading from stdout");
+                    sleep(Duration::from_millis(10)).await;
+                    let sh = sh.lock().await;
+                    let mut binding = sh.borrow_mut();
+                    let stdout = binding.stdout.as_mut().expect("Failed to get stdout");
+                    
                     let mut outBuf = BufReader::new(stdout);
-                    let Ok(buf) =  timeout(Duration::from_millis(200), outBuf.fill_buf()).await else {
-                        dbg!("Failed to read from stdout1");
+
+                    let Ok( buf) =  timeout(Duration::from_millis(200), outBuf.fill_buf()).await else {
+                        // dbg!("Timeout");
                         continue;
                     };
-                    let Ok(buf) = buf else {
-                        dbg!("Failed to read from stdout2");
+
+                    let Ok(buf ) = buf else {
+                        dbg!("Failed to read from stdout");
                         continue;
                     };
 
@@ -108,35 +107,30 @@ fn TerminalText(future: Resource<Arc<RwLock<Child>>>) -> Element {
         rsx! {
             div {  
                 style: "display: flex; flex-direction: column; height: 100%;",
-                textarea {
-                    style: "background-color: black; color: white; width: 100%; flex: 1; overflow: scroll; margin: 0; padding: 0; border: 0;",
-                    readonly: true,
-                    value: buffer,
+                pre {
+                    style: "background-color: black; color: white; width: 100%; flex: 1; overflow: scroll; 
+                            margin: 0; padding: 0; border: 0; cursor: text; ",
+                    "{buffer}"
                 }
             
-            input {
-                style: "background-color: black; color: white; height: 30px; width: 100%; margin: 0; padding: 0; border: 0;",
-                value: input_text,
-                
-                oninput: move |event| {
-                    let val = event.value();
-                    dbg!("Input: {}", val.clone());
-                    *input_text.write() = val.clone();
-                    // *commands.write() = input_text.read().to_string();
+                input {
+                    style: "background-color: black; color: white; height: 30px; width: 100%; margin: 0; padding: 0; border: 0;",
+                    value: input_text,
                     
-                },
-                
-                onkeydown: move |event| {
-                    if tx.send(event.key().to_string()).is_err() {
-                        dbg!("Failed to send to channel");
-                    }
-                    if event.key() == Key::Enter {
-                        dbg!("Enter pressed");
-                        *input_text.write() = "".to_string();
-                        *commands.write() = "\n".to_string();
+                    oninput: move |event| {
+                        let val = event.value();
+                        dbg!("Input: {}", val.clone());
+                        *input_text.write() = val.clone();
+                    },
+                    
+                    onkeydown: move |event| {
+                        if event.key() == Key::Enter {
+                            dbg!("Enter pressed");
+                            *commands.write() = format!("{}\n", input_text.read());
+                            *input_text.write() = "".to_string();
+                        }
                     }
                 }
-            }
             }
         }
     } else {
