@@ -2,6 +2,7 @@ use std::{cmp::{max, min}, rc::Rc};
 
 use crate::models::{tabs::Tabs, text::{Caret, TextFile}};
 
+use arboard::Clipboard;
 use dioxus::prelude::*;
 use dioxus_elements::{geometry::{euclid::{Size2D, Vector2D}, Pixels}, span};
 use tracing::info;
@@ -117,12 +118,31 @@ pub fn Editor(tabs: Signal<Tabs>) -> Element {
                         file.save_to_file();
                     }
 
-                    // (Key::Character(c), true, false) if &c.to_ascii_lowercase() == "c" => {
-                    //     info!("copy pressed");
-                    //     if let Some(selection) = file.get_selection() {
+                    (Key::Character(c), true, false) if &c.to_ascii_lowercase() == "c" => {
+                        info!("copy pressed");
+                        if let Some(selection) = file.get_selection() {
+                            let mut clipboard = Clipboard::new().ok();
+                            if let Some(clip) = clipboard.as_mut() {
+                                if let Err(_) = clip.set_text(selection.clone()) {
+                                    info!("failed to copy to clipboard");
+                                } else {
+                                    info!("copied to clipboard: {:?}", selection);
+                                }
+                            }
+                        }
+                    }
 
-                    //     }
-                    // }
+                    (Key::Character(v), true, false) if &v.to_ascii_lowercase() == "v" => {
+                        info!("paste pressed");
+                        let mut clipboard = Clipboard::new().ok();
+                        if let Some(clip) = clipboard.as_mut() {
+                            if let Ok(text) = clip.get_text() {
+                                file.insert_string(text);
+                            }
+                        }
+                    }
+
+                    
 
                     (_,_,_) => {}
                 }
