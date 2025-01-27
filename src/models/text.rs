@@ -4,7 +4,7 @@ use itertools::Itertools;
 use tracing::info;
 
 use super::event::Event;
-use ropey::Rope;
+use ropey::{iter::Lines, Rope};
 
 
 #[derive(Debug, Clone, PartialEq, Copy)]
@@ -76,8 +76,8 @@ impl TextFile {
         self.rope.to_string()
     }
 
-    pub fn chars(&self) -> Vec<Vec<char>> {
-        self.rope.lines().map(|line| line.chars().collect::<Vec<char>>()).filter(|l| !l.is_empty()).collect()
+    pub fn chars(&self) -> Lines {
+        self.rope.lines()
     }
 
     pub fn get_caret(&self) -> Caret {
