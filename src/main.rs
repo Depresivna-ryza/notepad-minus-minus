@@ -1,7 +1,7 @@
 pub mod models;
 pub mod views;
 
-use dotenv::dotenv;
+// use dotenv::dotenv;
 use models::panels::ShownPanels;
 use models::tabs::Tabs;
 use views::editor::Editor;
@@ -18,7 +18,7 @@ const FAVICON: Asset = asset!("/assets/favicon.ico");
 const MAIN_CSS: Asset = asset!("/assets/main.css");
 
 fn main() {
-    dotenv().ok();
+    // dotenv().ok();
     launch(Layout);
 }
 
