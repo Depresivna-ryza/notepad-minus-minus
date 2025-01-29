@@ -1,7 +1,5 @@
-use super::files::DirectoryItem;
-use libp2p::{identity, Multiaddr, PeerId};
+use libp2p::{identity, PeerId};
 use serde::{Deserialize, Serialize};
-use std::time::{SystemTime, UNIX_EPOCH};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SessionInfo {
@@ -9,7 +7,6 @@ pub struct SessionInfo {
     pub host_id: String,
     pub host_addr: String,
     pub name: String,
-    pub created_at: u64,
 }
 
 #[derive(Debug, Clone)]
@@ -30,12 +27,8 @@ pub struct Sessions {
 impl Session {
     pub fn new(host_id: String, host_addr: String, name: String, file_name: String) -> Self {
         let session_id = format!(
-            "{}_{}",
-            host_id,
-            SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .unwrap()
-                .as_secs()
+            "{}",
+            host_id
         );
 
         Self {
@@ -44,10 +37,6 @@ impl Session {
                 host_id,
                 host_addr,
                 name,
-                created_at: SystemTime::now()
-                    .duration_since(UNIX_EPOCH)
-                    .unwrap()
-                    .as_secs(),
             },
             peers: Vec::new(),
             shared_file_name: file_name,

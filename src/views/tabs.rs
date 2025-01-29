@@ -51,6 +51,14 @@ pub fn Tab(file_path: ReadOnlySignal<PathBuf>, tabs: Signal<Tabs>) -> Element {
                 style: "margin-left: 5px;",
                 onclick: move |_| {
                     tabs.write().close_tab(file_path());
+                    info!("Opening session for file: {:?}", file_name_short);
+                },
+                "Share"
+            }
+            button {
+                style: "margin-left: 5px;",
+                onclick: move |_| {
+                    tabs.write().close_tab(file_path());
                     info!("tab closed: {:?}", file_path);
                 },
                 "X"
