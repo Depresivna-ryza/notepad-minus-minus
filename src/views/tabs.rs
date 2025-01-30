@@ -9,10 +9,10 @@ use crate::models::tabs::Tabs;
 pub fn EditorTabs(tabs: Signal<Tabs>) -> Element {
     rsx! {
         div {
-            style: "background-color: pink; max-height: 70px; min-height: 70px; display: flex; overflow-x: auto;",
+            style: "background-color: pink; height: 70px; display: flex; overflow-x: auto;",
 
             for tab in tabs.read().opened_tabs.iter() {
-                Tab { file_path: tab.clone(), tabs }
+                Tab { file_path: tab.path.clone(), tabs }
             }
         }
     }
