@@ -7,10 +7,17 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-dioxus = { version = "0.6.0", features = [] }
+arboard = "3.4.1"
+async-std = "1.13.0"
+dioxus = { version = "0.6.2", features = [] }
+dioxus-heroicons = "0.4.0"
 itertools = "0.14.0"
 rfd = "0.15.2"
+ropey = "1.6.1"
 tracing = "0.1.41"
+tokio = { version = "1.43.0", features = ["full"] }
+dotenvy = "0.15.7"
+rayon = "1.10.0"
 
 
 [features]
@@ -18,8 +25,6 @@ default = ["desktop"]
 web = ["dioxus/web"]
 desktop = ["dioxus/desktop"]
 mobile = ["dioxus/mobile"]
-
-[profile]
 
 [profile.wasm-dev]
 inherits = "dev"
@@ -30,3 +35,6 @@ inherits = "dev"
 
 [profile.android-dev]
 inherits = "dev"
+
+[profile.release]
+opt-level = 3
