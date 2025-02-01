@@ -3,7 +3,7 @@ use std::{cmp::{max, min}, fs::read_to_string, path::{Path, PathBuf}};
 use itertools::Itertools;
 use tracing::info;
 
-use super::event::Event;
+use super::event::HistoryEvent;
 use ropey::{iter::Lines, Rope};
 
 
@@ -34,7 +34,7 @@ pub struct TextFile {
     pub rope: Rope,
     pub char_idx: usize,
 
-    event_history: Vec<Event>,
+    pub event_history: Vec<HistoryEvent>,
     history_idx: usize,
     pub dirty_changes: Option<usize>,
 
@@ -357,7 +357,7 @@ impl TextFile {
         }
 
         if !ctrl {
-            self.apply_new_event(Event::RemoveChar(self.rope.char(self.char_idx - 1), self.char_idx - 1));
+            self.apply_new_event(HistoryEvent::RemoveChar(self.rope.char(self.char_idx - 1), self.char_idx - 1));
             return;
         }
 
@@ -365,7 +365,7 @@ impl TextFile {
         self.char_idx -= 1;
         let start_of_deletion_idx = self.ctrl_idx_move(true);
 
-        self.apply_new_event(Event::RemoveString(self.rope.slice(start_of_deletion_idx..end_of_deletion_idx).to_string(), start_of_deletion_idx));
+        self.apply_new_event(HistoryEvent::RemoveString(self.rope.slice(start_of_deletion_idx..end_of_deletion_idx).to_string(), start_of_deletion_idx));
     }
 
     pub fn delete(&mut self, ctrl: bool) {
@@ -379,7 +379,7 @@ impl TextFile {
         }
 
         if !ctrl {
-            self.apply_new_event(Event::RemoveChar(self.rope.char(self.char_idx), self.char_idx));
+            self.apply_new_event(HistoryEvent::RemoveChar(self.rope.char(self.char_idx), self.char_idx));
             return;
         }
 
@@ -387,7 +387,7 @@ impl TextFile {
         self.char_idx += 1;
         let end_of_deletion_idx = self.ctrl_idx_move(false);
 
-        self.apply_new_event(Event::RemoveString(self.rope.slice(start_of_deletion_idx..end_of_deletion_idx).to_string(), start_of_deletion_idx));
+        self.apply_new_event(HistoryEvent::RemoveString(self.rope.slice(start_of_deletion_idx..end_of_deletion_idx).to_string(), start_of_deletion_idx));
     }
 
     pub fn cut_line(&mut self) -> String {
@@ -395,13 +395,13 @@ impl TextFile {
         let end_idx = self.rope.line_to_char(self.get_caret().ln + 1);
         let res = self.rope.slice(start_idx..end_idx).to_string();
         
-        self.apply_new_event(Event::RemoveString(self.rope.slice(start_idx..end_idx).to_string(), start_idx));
+        self.apply_new_event(HistoryEvent::RemoveString(self.rope.slice(start_idx..end_idx).to_string(), start_idx));
         
         res
     }
 
     pub fn move_line(&mut self, go_down: bool) {
-        self.apply_new_event(Event::MoveLine(self.get_caret().ln, go_down));
+        self.apply_new_event(HistoryEvent::MoveLine(self.get_caret().ln, go_down));
     }
 
     pub fn duplicate_line(&mut self, go_down: bool) {
@@ -413,7 +413,7 @@ impl TextFile {
 
         let shifted_line = chars.cycle().skip(line_offset).take(end_idx - start_idx).collect::<String>();
 
-        self.apply_new_event(Event::AddString(shifted_line, self.char_idx));
+        self.apply_new_event(HistoryEvent::AddString(shifted_line, self.char_idx));
 
         if (!go_down) {
             self.char_idx -= end_idx - start_idx;
@@ -423,7 +423,7 @@ impl TextFile {
     pub fn insert_char(&mut self, c: char) {
         self.delete_selection();
 
-        self.apply_new_event(Event::AddChar(c, self.char_idx));
+        self.apply_new_event(HistoryEvent::AddChar(c, self.char_idx));
     }
 
     pub fn insert_newline(&mut self) {
@@ -437,7 +437,7 @@ impl TextFile {
     pub fn insert_string(&mut self, s: String) {
         self.delete_selection();
 
-        self.apply_new_event(Event::AddString(s, self.char_idx));
+        self.apply_new_event(HistoryEvent::AddString(s, self.char_idx));
     }
 
     pub fn get_selection(&self) -> Option<String> {
@@ -451,7 +451,7 @@ impl TextFile {
         }
     }
 
-    pub fn apply_new_event(&mut self, event: Event) {
+    pub fn apply_new_event(&mut self, event: HistoryEvent) {
         self.event_history.truncate(self.history_idx);
 
         self.event_history.push(event.clone());
@@ -469,34 +469,34 @@ impl TextFile {
             let s = min(start, end);
             let e = max(start, end); 
 
-            self.apply_new_event(Event::RemoveString(self.rope.slice(s..e).to_string(), s));
+            self.apply_new_event(HistoryEvent::RemoveString(self.rope.slice(s..e).to_string(), s));
 
             self.clear_selection();
         }
     }
 
-    pub fn apply_event(&mut self, event: Event) {
+    pub fn apply_event(&mut self, event: HistoryEvent) {
         match event {
-            Event::AddChar(c, idx) => {
+            HistoryEvent::AddChar(c, idx) => {
                 self.rope.insert_char(idx, c);
                 self.char_idx = idx;
                 self.caret_move_right(false);
             }
-            Event::RemoveChar(_c, idx) => {
+            HistoryEvent::RemoveChar(_c, idx) => {
                 self.rope.remove(idx .. idx + 1);
                 self.char_idx = idx;
             }
-            Event::AddString(s,idx) => {
+            HistoryEvent::AddString(s,idx) => {
                 self.rope.insert(idx, &s);
                 let new_idx = idx + s.len();
                 self.char_idx = new_idx;
             }
-            Event::RemoveString(s, idx) => {
+            HistoryEvent::RemoveString(s, idx) => {
                 self.rope.remove(idx..idx + s.len());
                 self.char_idx = idx;
             }
 
-            Event::MoveLine(ln, go_down) => {
+            HistoryEvent::MoveLine(ln, go_down) => {
                 let remove_caret_line = match (go_down, ln) {
                     (true, i) if i + 1 >= self.rope.len_lines() => return,
                     (false, 0) => return,
@@ -528,29 +528,29 @@ impl TextFile {
         };
 
         match event {
-            Event::AddChar(_c, idx) => {
+            HistoryEvent::AddChar(_c, idx) => {
                 self.rope.remove(idx .. idx + 1);
                 self.char_idx = idx;
             }
-            Event::RemoveChar(c, idx) => {
+            HistoryEvent::RemoveChar(c, idx) => {
                 self.rope.insert_char(idx, c);
                 self.char_idx = idx;
                 self.caret_move_right(false);
             }
-            Event::AddString(s, idx) => {
+            HistoryEvent::AddString(s, idx) => {
                 self.rope.remove(idx..idx + s.len());
                 self.char_idx = idx;
             }
-            Event::RemoveString(s, idx ) => {
+            HistoryEvent::RemoveString(s, idx ) => {
                 self.rope.insert(idx, &s);
                 let new_idx = idx + s.len();
                 self.char_idx = new_idx;
             }
 
-            Event::MoveLine(ln, go_down) => {
+            HistoryEvent::MoveLine(ln, go_down) => {
                 match (go_down) {
-                    (true) => self.apply_event(Event::MoveLine(ln + 1, false)),
-                    (false) => self.apply_event(Event::MoveLine(ln - 1, true)),
+                    (true) => self.apply_event(HistoryEvent::MoveLine(ln + 1, false)),
+                    (false) => self.apply_event(HistoryEvent::MoveLine(ln - 1, true)),
                 }
             }
         }

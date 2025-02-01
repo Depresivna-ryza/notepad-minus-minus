@@ -62,6 +62,16 @@ pub fn SidePanel(shown_panels: ShownPanels) -> Element {
                     dbg!(shown_panels.sessions.peek());
                 }
             },
+            SidePanelIcon { 
+                title: "History".to_string(), 
+                icon: Shape::Clock,
+                on_click: move || { 
+                    println!("History clicked"); 
+                    let val = *shown_panels.history.read();
+                    shown_panels.history.set(!val);
+                    dbg!(shown_panels.history.peek());
+                }
+            },
         }
     }
 }
