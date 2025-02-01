@@ -30,10 +30,10 @@ impl From<ShownPanels> for ReadOnlyShownPanels {
 impl ShownPanels {
     pub fn new() -> Self {
         Self {
-            terminal: use_signal(||false),
-            search: use_signal(||false),
-            file_tree: use_signal(||false),
-            sessions: use_signal(||false),
+            terminal: use_signal(||true),
+            search: use_signal(||true),
+            file_tree: use_signal(||true),
+            sessions: use_signal(||true),
         }
     }
 }
