@@ -246,15 +246,17 @@ pub fn EditorLine(
     content: String,
     line_i: usize,
     caret_col: usize,
-    caret_line: usize,
+    caret_line: ReadOnlySignal<usize>,
     parent_element: Signal<Option<Rc<MountedData>>>,
 ) -> Element {
     
     let mut element: Signal<Option<Rc<MountedData>>> = use_signal(|| None);
 
     let _ = use_resource(move || async move {
-        if line_i == caret_line {
+        if line_i == caret_line() {
+            dbg!(element.read());
             if let Some(ref elem) = *element.read() {
+                dbg!(parent_element.read());
                 if let Some(ref parent_elem) = *parent_element.read() {
                     let scroll_offset = parent_elem.get_scroll_offset().await.unwrap();
                     let scroll_size = parent_elem.get_scroll_size().await.unwrap();
@@ -262,9 +264,9 @@ pub fn EditorLine(
 
                     let client_rect = elem.get_client_rect().await.unwrap();
 
-                    // dbg!(parent_rect.min_y(), parent_rect.max_y());
-                    // dbg!(client_rect.min_y(), scroll_offset.y);
-                    // dbg!(client_rect.max_y(), scroll_offset.y + scroll_size.height);
+                    dbg!(parent_rect.min_y(), parent_rect.max_y());
+                    dbg!(client_rect.min_y(), scroll_offset.y);
+                    dbg!(client_rect.max_y(), scroll_offset.y + scroll_size.height);
         
                     let height_underflown = client_rect.min_y() < parent_rect.min_y();
                     let height_overflown = client_rect.max_y() > parent_rect.max_y();
@@ -285,7 +287,7 @@ pub fn EditorLine(
                 element.set(Some(e.data()));
             },
 
-            style: match line_i == caret_line {
+            style: match line_i == caret_line() {
                 true => "display: flex; flex-direction: row; background-color: gray;",
                 false => "display: flex; flex-direction: row;"
             }.to_string() + "font-family: monospace; font-size: 16px; white-space: pre ",
@@ -304,7 +306,7 @@ pub fn EditorLine(
                     },
 
                     style:
-                        if i == caret_col && line_i == caret_line {
+                        if i == caret_col && line_i == caret_line() {
                             "; background-color: yellow;"
                         } else if let (Some(start), Some(end)) = (selection_start, selection_end) {
                             if (start.ln < line_i && line_i < end.ln ) || 
