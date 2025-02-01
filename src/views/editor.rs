@@ -120,6 +120,11 @@ pub fn Editor(tabs: Signal<Tabs>) -> Element {
                         file.save_to_file();
                     }
 
+                    (Key::Character(x), true, false) if &x.to_ascii_lowercase() == "x" => {
+                        info!("cut pressed");
+                        file.cut_line();
+                    }
+
                     (Key::Character(c), true, false) if &c.to_ascii_lowercase() == "c" => {
                         info!("copy pressed");
                         if let Some(selection) = file.get_selection() {
