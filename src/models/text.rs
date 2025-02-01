@@ -342,6 +342,10 @@ impl TextFile {
         self.insert_char('\n');
     }
 
+    pub fn insert_tab(&mut self) {
+        self.insert_string("    ".to_string());
+    }
+
     pub fn insert_string(&mut self, s: String) {
         self.delete_selection();
 
