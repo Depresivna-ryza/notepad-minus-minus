@@ -46,17 +46,11 @@ pub fn Directory(dir: Dir) -> Element {
                         focus_state.write().change_focus(&path2);
                     },
 
-                    tabindex: 0,
-                    
-                    onfocusout: move |_| {
-                        right_click_menu_state.close_menu();
-                        focus_state.write().clear_focus();
-                    },
-
                     oncontextmenu: move |event: MouseEvent| {
                         right_click_menu_state.handle_right_click(event);
                         focus_state.write().change_focus(&path3);
                     },
+
                     " {dir_name} "
                 }
             }
