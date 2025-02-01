@@ -3,7 +3,7 @@ use dioxus::prelude::*;
 use tracing::info;
 
 use crate::models::files::DirectoryItem;
-use crate::views::dialogs::{Operation, OperationDialogHandler};
+use crate::views::file_explorer::dialogs::{Operation, OperationDialogHandler};
 use crate::models::files::FileSystem;
 
 use std::time::Duration;
