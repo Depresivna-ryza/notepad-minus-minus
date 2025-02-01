@@ -4,7 +4,6 @@ use crate::models::{tabs::Tabs, text::{Caret, TextFile}};
 
 use arboard::Clipboard;
 use dioxus::prelude::*;
-use dioxus_elements::{geometry::{euclid::{Size2D, Vector2D}, Pixels}, span};
 use tracing::info;
 
 #[component]
@@ -52,23 +51,19 @@ pub fn Editor(tabs: Signal<Tabs>) -> Element {
                     }
 
                     (Key::ArrowLeft, false, selection) => {
-                        // file.clear_selection();
                         file.caret_move_left();
 
                         file.set_selection(selection, old_idx);
                     }
                     (Key::ArrowRight, false, selection) => {
-                        // file.clear_selection();
                         file.caret_move_right();
                         file.set_selection(selection, old_idx);
                     }
                     (Key::ArrowUp, false, selection) => {
-                        // file.clear_selection();
                         file.caret_move_up();
                         file.set_selection(selection, old_idx);
                     }
                     (Key::ArrowDown, false, selection) => {
-                        // file.clear_selection();
                         file.caret_move_down();
                         file.set_selection(selection, old_idx);
                     }
@@ -80,18 +75,15 @@ pub fn Editor(tabs: Signal<Tabs>) -> Element {
                     (Key::Character(s), false, _) => {
                         if let Some(c) = s.chars().next() {
                             info!("inserting char: {:?}", c);
-                            // file.clear_selection();
                             file.insert_char(c);
                         }
                     }
                     
                     (Key::Backspace, false, _) => {
-                        // file.clear_selection();
                         file.backspace();
                     }
 
                     (Key::Delete, false, _) => {
-                        // file.clear_selection();
                         file.delete();
                     }
 
@@ -151,7 +143,9 @@ pub fn Editor(tabs: Signal<Tabs>) -> Element {
 
             style: "display: flex; flex-direction: column; flex: 1; justify-content: space-between; height: 10px;",
             TopStatusBar {tabs},
-            EditorText {tabs, text, caret_col: caret_col(), caret_line: caret_line()},
+            EditorText {tabs, 
+                // text,
+                 caret_col: caret_col(), caret_line: caret_line()},
             BottomStatusBar {tabs, caret_col: caret_col(), caret_line: caret_line(), char_idx: text.read().clone().map_or(0, |t| t.char_idx)},
         }
     }
@@ -160,11 +154,11 @@ pub fn Editor(tabs: Signal<Tabs>) -> Element {
 #[component]
 pub fn EditorText(
     tabs: Signal<Tabs>,
-    text: Memo<Option<TextFile>>,
-    caret_col: ReadOnlySignal<usize>,
-    caret_line: ReadOnlySignal<usize>,
+    // text: Memo<Option<TextFile>>,
+    caret_col: usize,
+    caret_line: usize,
 ) -> Element {
-    let Some(ref text) = *text.read() else {
+    let Some(ref text) = tabs.read().get_current_file() else {
         return rsx! {
             div {
                 style: "background-color: purple; flex: 1; color: red;",
@@ -187,9 +181,11 @@ pub fn EditorText(
                 
                 EditorLine {
                     tabs: tabs,
+                    selection_start: tabs.read().get_current_file().map(|f| f.selection.map(|s| f.get_caret_from_idx(min(s.0, s.1)))).flatten(),
+                    selection_end: tabs.read().get_current_file().map(|f| f.selection.map(|s| f.get_caret_from_idx(max(s.0, s.1)))).flatten(),
                     content: line, 
                     line_i: i, 
-                    caret_col: caret_col, 
+                    caret_col: caret_col,
                     caret_line: caret_line,
                     parent_element: element,
                 }
@@ -201,25 +197,19 @@ pub fn EditorText(
 #[component]
 pub fn EditorLine(
     tabs: Signal<Tabs>,
-    content: ReadOnlySignal<Vec<char>>, 
-    line_i: ReadOnlySignal<usize>,
-    caret_col: ReadOnlySignal<usize>,
-    caret_line: ReadOnlySignal<usize>,
+    selection_start: Option<Caret>,
+    selection_end: Option<Caret>,
+    content: String,
+    line_i: usize,
+    caret_col: usize,
+    caret_line: usize,
     parent_element: Signal<Option<Rc<MountedData>>>,
 ) -> Element {
     
     let mut element: Signal<Option<Rc<MountedData>>> = use_signal(|| None);
 
-    let selection_start = use_memo(move || {
-        tabs.read().get_current_file().map(|f| f.selection.map(|s| f.get_caret_from_idx(min(s.0, s.1)))).flatten()
-    });
-
-    let selection_end = use_memo(move || {
-        tabs.read().get_current_file().map(|f| f.selection.map(|s| f.get_caret_from_idx(max(s.0, s.1)))).flatten()
-    });
-
     let _ = use_resource(move || async move {
-        if line_i == caret_line() {
+        if line_i == caret_line {
             if let Some(ref elem) = *element.read() {
                 if let Some(ref parent_elem) = *parent_element.read() {
                     let scroll_offset = parent_elem.get_scroll_offset().await.unwrap();
@@ -228,9 +218,9 @@ pub fn EditorLine(
 
                     let client_rect = elem.get_client_rect().await.unwrap();
 
-                    dbg!(parent_rect.min_y(), parent_rect.max_y());
-                    dbg!(client_rect.min_y(), scroll_offset.y);
-                    dbg!(client_rect.max_y(), scroll_offset.y + scroll_size.height);
+                    // dbg!(parent_rect.min_y(), parent_rect.max_y());
+                    // dbg!(client_rect.min_y(), scroll_offset.y);
+                    // dbg!(client_rect.max_y(), scroll_offset.y + scroll_size.height);
         
                     let height_underflown = client_rect.min_y() < parent_rect.min_y();
                     let height_overflown = client_rect.max_y() > parent_rect.max_y();
@@ -251,38 +241,32 @@ pub fn EditorLine(
                 element.set(Some(e.data()));
             },
 
-            style: match line_i == caret_line() {
+            style: match line_i == caret_line {
                 true => "display: flex; flex-direction: row; background-color: gray;",
                 false => "display: flex; flex-direction: row;"
-            },
+            }.to_string() + "font-family: monospace; font-size: 16px; white-space: pre ",
             
             span {
                 style: "padding-right: 10px; min-width: 30px; background-color: darkblue;",
                 "{line_i}"
             }
 
-            for (i, c) in content.iter().map(|c| if c.clone() != '\n' { c.clone()} else {' '}).enumerate() {
+            for (i, c) in content.chars().into_iter().map(|c| if c.clone() != '\n' { c.clone()} else {' '}).enumerate() {
                 span {
                     onclick: move |e| {
                         info!("clicked on line: {:?}, col: {:?}, char: {}", line_i, i, c);
                         let selection = e.modifiers().contains(Modifiers::SHIFT);
-                        tabs.write().get_current_file_mut().map(|file| file.set_caret_position(line_i(), i, selection));
+                        tabs.write().get_current_file_mut().map(|file| file.set_caret_position(line_i, i, selection));
                     },
-            
-                    // style: match (i == caret_col() && line_i == caret_line(), line_i == caret_line()) {
-                    //     (true, true) => "font-family: monospace; background-color: yellow; font-size: 16px; white-space: pre",
-                    //     _ => "font-family: monospace; font-size: 16px; white-space: pre"
-                    // },
 
-                    style: "font-family: monospace; font-size: 16px; white-space: pre".to_string() + 
-                        if i == caret_col() && line_i == caret_line() {
+                    style:
+                        if i == caret_col && line_i == caret_line {
                             "; background-color: yellow;"
-                        } else if let (Some(start), Some(end)) = (selection_start(), selection_end()) {
-                            // if start.col <= i && i <= end.col && start.ln <= line_i() && line_i() <= end.ln {
-                            if (start.ln < line_i() && line_i() < end.ln ) || 
-                                (start.ln == line_i() && line_i() == end.ln && start.col <= i && i <= end.col) ||
-                                (start.ln == line_i() && line_i() < end.ln && start.col <= i) ||
-                                (start.ln < line_i() && line_i() == end.ln && i <= end.col) {
+                        } else if let (Some(start), Some(end)) = (selection_start, selection_end) {
+                            if (start.ln < line_i && line_i < end.ln ) || 
+                                (start.ln == line_i && line_i == end.ln && start.col <= i && i <= end.col) ||
+                                (start.ln == line_i && line_i < end.ln && start.col <= i) ||
+                                (start.ln < line_i && line_i == end.ln && i <= end.col) {
                                 "; background-color: lightblue;"
                             } else {
                                 ""
@@ -299,7 +283,7 @@ pub fn EditorLine(
                 onclick: move |e| {
                     info!("clicked on line: {:?}", line_i);
                     let selection = e.modifiers().contains(Modifiers::SHIFT);
-                    tabs.write().get_current_file_mut().map(|file| file.set_caret_position(line_i(), content().len() - 1, selection));
+                    tabs.write().get_current_file_mut().map(|file| file.set_caret_position(line_i, content.len() - 1, selection));
                 }
             }
         }
@@ -331,9 +315,9 @@ pub fn TopStatusBar(tabs: Signal<Tabs>) -> Element {
 #[component]
 pub fn BottomStatusBar(
     tabs: ReadOnlySignal<Tabs>,
-    caret_col: ReadOnlySignal<usize>,
-    caret_line: ReadOnlySignal<usize>,
-    char_idx: ReadOnlySignal<usize>,
+    caret_col: usize,
+    caret_line: usize,
+    char_idx: usize,
 ) -> Element {
     rsx! {
         div {
