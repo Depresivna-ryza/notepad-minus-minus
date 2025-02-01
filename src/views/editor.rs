@@ -96,6 +96,12 @@ pub fn Editor(tabs: Signal<Tabs>) -> Element {
                         file.insert_newline();
                     }
 
+                    (Key::Tab, false, _) => {
+                        file.clear_selection();
+                        file.insert_tab();
+                        e.prevent_default();
+                    }
+
                     (Key::Character(z), true, false) if &z.to_ascii_lowercase() == "z" => {
                         info!("undo pressed");
                         file.clear_selection();
