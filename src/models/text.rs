@@ -252,13 +252,43 @@ impl TextFile {
         }
     }
 
+    pub fn caret_move_line_end(&mut self, ctrl: bool) {
+        if ctrl {
+            self.char_idx = self.rope.len_chars() - 1;
+            return;
+        }
+
+        let mut new_char_idx = self.char_idx;
+
+        while new_char_idx < self.rope.len_chars() - 1 && self.rope.char(new_char_idx) != '\n' {
+            new_char_idx += 1;
+        }
+
+        self.char_idx = new_char_idx;
+    }
+
+    pub fn caret_move_line_start(&mut self, ctrl: bool) {
+        if ctrl {
+            self.char_idx = 0;
+            return;
+        }
+
+        let mut new_char_idx = self.char_idx;
+
+        while new_char_idx > 0 && self.rope.char(new_char_idx - 1) != '\n' {
+            new_char_idx -= 1;
+        }
+
+        self.char_idx = new_char_idx;
+    }
+
     pub fn clear_selection(&mut self) {
         self.selection = None;
     }
 
     pub fn set_selection(&mut self, selection: bool, old_idx: usize) {
         match (selection, self.selection) {
-            (true, Some((_start, end))) if self.char_idx == end => {
+            (true, Some((start, end))) if self.char_idx == start => {
                 self.selection = None;
             }
 
