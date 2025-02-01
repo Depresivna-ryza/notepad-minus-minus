@@ -46,17 +46,13 @@ pub fn Editor(tabs: Signal<Tabs>) -> Element {
                 let old_idx = file.char_idx;
 
                 match (e.key(), ctrl, shift) {
-                    (Key::End, _, _ ) => {
-                        file.delete_selection();
-                    }
 
-                    (Key::ArrowLeft, false, selection) => {
-                        file.caret_move_left();
-
+                    (Key::ArrowLeft, ctrl, selection) => {
+                        file.caret_move_left(ctrl);
                         file.set_selection(selection, old_idx);
                     }
-                    (Key::ArrowRight, false, selection) => {
-                        file.caret_move_right();
+                    (Key::ArrowRight, ctrl, selection) => {
+                        file.caret_move_right(ctrl);
                         file.set_selection(selection, old_idx);
                     }
                     (Key::ArrowUp, false, selection) => {

@@ -136,18 +136,69 @@ impl TextFile {
         }
     }
     
-    pub fn caret_move_left(&mut self) {
-        self.char_idx = match self.char_idx {
-            0 => 0,
-            i => i - 1,
+    pub fn caret_move_left(&mut self, ctrl: bool) {
+        match (ctrl, self.char_idx) {
+            (_, 0) => {
+                self.char_idx = 0;
+            }
+
+            (false, i) => {
+                self.char_idx = i - 1;
+            }
+
+            (true, i) => {
+                let mut new_char_idx = i - 1;
+
+                let mut skipped_whitespace = !self.rope.char(new_char_idx).is_ascii_whitespace();
+
+                while new_char_idx > 0 && 
+                    self.rope.char(new_char_idx - 1) != '\n' &&
+                    (self.rope.char(new_char_idx).is_ascii_alphanumeric() || !skipped_whitespace) &&
+                    (self.rope.char(new_char_idx).is_ascii_whitespace() || skipped_whitespace) {
+                        
+                    new_char_idx -= 1;
+
+                    if !self.rope.char(new_char_idx).is_ascii_whitespace() {
+                        skipped_whitespace = true;
+                    }
+                }
+
+                self.char_idx = new_char_idx;
+            }
         }
     }
 
-    pub fn caret_move_right(&mut self) {
-        self.char_idx = match self.char_idx {
-            i if i + 1 < self.rope.len_chars() => i + 1,
-            _ => self.rope.len_chars() - 1,
-        };
+    pub fn caret_move_right(&mut self, ctrl: bool) {
+        match (ctrl, self.char_idx) {
+            (_, i) if i + 1 >= self.rope.len_chars() => {
+                self.char_idx = self.rope.len_chars() - 1;
+            }
+
+            (false, i) => {
+                self.char_idx = i + 1;
+            }
+
+            (true, i) => {
+                let mut new_char_idx = i + 1;
+
+                let mut skipped_whitespace = !self.rope.char(new_char_idx).is_ascii_whitespace();
+
+                while new_char_idx < self.rope.len_chars() - 1 && 
+                    self.rope.char(new_char_idx) != '\n' &&
+                    (self.rope.char(new_char_idx).is_ascii_alphanumeric() || !skipped_whitespace) &&
+                    (self.rope.char(new_char_idx).is_ascii_whitespace() || skipped_whitespace) {
+                        
+                    new_char_idx += 1;
+
+                    if !self.rope.char(new_char_idx).is_ascii_whitespace() {
+                        skipped_whitespace = true;
+                    }
+                }
+
+                self.char_idx = new_char_idx;
+            }
+        }
+
 
     }
 
@@ -308,7 +359,7 @@ impl TextFile {
             Event::AddChar(c, idx) => {
                 self.rope.insert_char(idx, c);
                 self.char_idx = idx;
-                self.caret_move_right();
+                self.caret_move_right(false);
             }
             Event::RemoveChar(_c, idx) => {
                 self.rope.remove(idx .. idx + 1);
@@ -343,7 +394,7 @@ impl TextFile {
             Event::RemoveChar(c, idx) => {
                 self.rope.insert_char(idx, c);
                 self.char_idx = idx;
-                self.caret_move_right();
+                self.caret_move_right(false);
             }
             Event::AddString(s, idx) => {
                 self.rope.remove(idx..idx + s.len());
