@@ -122,9 +122,19 @@ pub fn Editor(tabs: Signal<Tabs>) -> Element {
 
                     (Key::Character(x), true, false) if &x.to_ascii_lowercase() == "x" => {
                         info!("cut pressed");
-                        file.cut_line();
-                    }
+                        let line = file.cut_line();
 
+                        let mut clipboard = Clipboard::new().ok();
+                        if let Some(clip) = clipboard.as_mut() {
+                            if let Err(_) = clip.set_text(line.clone()) {
+                                info!("failed to copy to clipboard");
+                            } else {
+                                info!("copied to clipboard: {:?}", line);
+                            }
+                        }
+                    }
+                        
+    
                     (Key::Character(c), true, false) if &c.to_ascii_lowercase() == "c" => {
                         info!("copy pressed");
                         if let Some(selection) = file.get_selection() {

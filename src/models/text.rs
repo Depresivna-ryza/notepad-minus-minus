@@ -390,25 +390,20 @@ impl TextFile {
         self.apply_new_event(Event::RemoveString(self.rope.slice(start_of_deletion_idx..end_of_deletion_idx).to_string(), start_of_deletion_idx));
     }
 
-    pub fn cut_line(&mut self) {
-        let caret = self.get_caret();
+    pub fn cut_line(&mut self) -> String {
+        let (start_idx, end_idx) = self.get_current_line();
+        let res = self.rope.slice(start_idx..end_idx).to_string();
 
-        let mut start_of_deletion_idx = 0;
-        let mut end_of_deletion_idx = 0;
+        self.apply_new_event(Event::RemoveString(self.rope.slice(start_idx..end_idx).to_string(), start_idx));
 
-        for (i, line) in self.rope.lines().enumerate() {
-            if i == caret.ln {
-                start_of_deletion_idx = end_of_deletion_idx;
-                end_of_deletion_idx += line.len_chars();
-            } else if i == caret.ln + 1 {
-                end_of_deletion_idx += line.len_chars();
-                break;
-            } else {
-                end_of_deletion_idx += line.len_chars();
-            }
-        }
+        res
+    }
 
-        self.apply_new_event(Event::RemoveString(self.rope.slice(start_of_deletion_idx..end_of_deletion_idx).to_string(), start_of_deletion_idx));
+    fn get_current_line(&self) -> (usize, usize) {
+        let start_idx = self.rope.line_to_char(self.get_caret().ln);
+        let end_idx = self.rope.line_to_char(self.get_caret().ln + 1);
+
+        (start_idx, end_idx)
     }
 
     pub fn insert_char(&mut self, c: char) {
