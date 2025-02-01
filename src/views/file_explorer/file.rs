@@ -1,0 +1,55 @@
+use dioxus::prelude::*;
+use tracing::info;
+use std::path::PathBuf;
+use crate::views::file_explorer::dialogs::{RightClickMenuState, RightClickMenu};
+use crate::models::{
+    files::{FileSystem, DirectoryItem},
+    tabs::Tabs,
+};
+
+
+#[component]
+pub fn File(file: PathBuf) -> Element {
+    let file_name = file.file_name().unwrap().to_str().unwrap();
+    
+    let mut right_click_menu_state = use_context_provider(|| RightClickMenuState::new());
+
+    let mut state = use_context::<Signal<FileSystem>>();
+
+    let style = if state.read().is_focused(&file) {
+        "color: red; margin: 5px 0px 5px 20px;"
+    } else {
+        "color: darkred; margin: 5px 0px 5px 20px;"
+    };
+
+    let file1 = file.clone();
+    let file2 = file.clone();
+
+    rsx!(
+        div {
+            style: {style},
+            
+            ondoubleclick: move |_| {
+                info!("File clicked: {:?}", file1.clone());
+
+                let mut tabs = use_context::<Signal<Tabs>>();
+                tabs.write().open_tab(file1.clone());
+
+            },
+
+            onclick: move |_| {
+                state.write().change_focus(&file2);
+            },
+            
+            oncontextmenu: move |event: MouseEvent| {
+                right_click_menu_state.handle_right_click(event);
+            },
+            
+            " {file_name}"
+        }
+        
+        if right_click_menu_state.is_open() {
+            RightClickMenu { directory_item: DirectoryItem::File(file.clone()) }
+        }
+    )
+}
