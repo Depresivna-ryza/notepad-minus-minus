@@ -8,7 +8,7 @@ use crate::models::{
 
 #[component]
 pub fn FileExplorer(tabs: Signal<Tabs>) -> Element {
-    let mut file_system_state = use_context_provider(|| Signal::new(FileSystem::new()));
+    let mut file_system_state = use_context::<Signal<FileSystem>>();
     use_context_provider(|| tabs);
 
     let change_root_directory = move |_| async move {
