@@ -72,10 +72,6 @@ pub fn Editor(tabs: Signal<Tabs>) -> Element {
                         file.set_selection(selection, old_idx);
                     }
 
-                    (Key::Escape, false, _) => {
-                        file.clear_selection();
-                    }
-
                     (Key::Character(s), false, _) => {
                         if let Some(c) = s.chars().next() {
                             info!("inserting char: {:?}", c);
@@ -83,12 +79,16 @@ pub fn Editor(tabs: Signal<Tabs>) -> Element {
                         }
                     }
                     
-                    (Key::Backspace, false, _) => {
-                        file.backspace();
+                    (Key::Backspace, ctrl, false) => {
+                        file.backspace(ctrl);
+                    }
+                    
+                    (Key::Delete, ctrl, false) => {
+                        file.delete(ctrl);
                     }
 
-                    (Key::Delete, false, _) => {
-                        file.delete();
+                    (Key::Escape, false, _) => {
+                        file.clear_selection();
                     }
 
                     (Key::Enter, false, _) => {

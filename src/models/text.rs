@@ -147,23 +147,26 @@ impl TextFile {
             }
 
             (true, i) => {
-                let mut new_char_idx = i - 1;
+                // let mut new_char_idx = i - 1;
 
-                let mut skipped_whitespace = !self.rope.char(new_char_idx).is_ascii_whitespace();
+                // let mut skipped_whitespace = !self.rope.char(new_char_idx).is_ascii_whitespace();
 
-                while new_char_idx > 0 && 
-                    self.rope.char(new_char_idx - 1) != '\n' &&
-                    (self.rope.char(new_char_idx).is_ascii_alphanumeric() || !skipped_whitespace) &&
-                    (self.rope.char(new_char_idx).is_ascii_whitespace() || skipped_whitespace) {
+                // while new_char_idx > 0 && 
+                //     self.rope.char(new_char_idx - 1) != '\n' &&
+                //     (self.rope.char(new_char_idx).is_ascii_alphanumeric() || !skipped_whitespace) &&
+                //     (self.rope.char(new_char_idx).is_ascii_whitespace() || skipped_whitespace) {
                         
-                    new_char_idx -= 1;
+                //     new_char_idx -= 1;
 
-                    if !self.rope.char(new_char_idx).is_ascii_whitespace() {
-                        skipped_whitespace = true;
-                    }
-                }
+                //     if !self.rope.char(new_char_idx).is_ascii_whitespace() {
+                //         skipped_whitespace = true;
+                //     }
+                // }
 
-                self.char_idx = new_char_idx;
+                // self.char_idx = new_char_idx;
+
+                self.char_idx = i - 1;
+                self.char_idx = self.ctrl_idx_move(true);
             }
         }
     }
@@ -179,27 +182,59 @@ impl TextFile {
             }
 
             (true, i) => {
-                let mut new_char_idx = i + 1;
+                // let mut new_char_idx = i + 1;    
 
-                let mut skipped_whitespace = !self.rope.char(new_char_idx).is_ascii_whitespace();
+                // let mut skipped_whitespace = !self.rope.char(new_char_idx).is_ascii_whitespace();
 
-                while new_char_idx < self.rope.len_chars() - 1 && 
-                    self.rope.char(new_char_idx) != '\n' &&
-                    (self.rope.char(new_char_idx).is_ascii_alphanumeric() || !skipped_whitespace) &&
-                    (self.rope.char(new_char_idx).is_ascii_whitespace() || skipped_whitespace) {
+                // while new_char_idx < self.rope.len_chars() - 1 && 
+                //     self.rope.char(new_char_idx) != '\n' &&
+                //     (self.rope.char(new_char_idx).is_ascii_alphanumeric() || !skipped_whitespace) &&
+                //     (self.rope.char(new_char_idx).is_ascii_whitespace() || skipped_whitespace) {
                         
-                    new_char_idx += 1;
+                //     new_char_idx += 1;
 
-                    if !self.rope.char(new_char_idx).is_ascii_whitespace() {
-                        skipped_whitespace = true;
-                    }
-                }
+                //     if !self.rope.char(new_char_idx).is_ascii_whitespace() {
+                //         skipped_whitespace = true;
+                //     }
+                // }
 
-                self.char_idx = new_char_idx;
+                // self.char_idx = new_char_idx;
+
+                self.char_idx = i + 1;
+                self.char_idx = self.ctrl_idx_move(false);
             }
         }
 
 
+    }
+
+    fn ctrl_idx_move(&self, go_left: bool) -> usize {
+        let mut idx = self.char_idx;
+
+        let mv = |i: usize| { 
+            match (go_left, i) {
+                (true, 0) => 0,
+                (false, i) if i + 1 >= self.rope.len_chars() => self.rope.len_chars() - 1,
+                (true, i) => i - 1,
+                (false, i) => i + 1,
+            }
+        };
+
+        let mut skipped_whitespace = !self.rope.char(idx).is_ascii_whitespace();
+
+        while idx != mv(idx) &&
+            self.rope.char(idx) != '\n' &&
+            (self.rope.char(idx).is_ascii_alphanumeric() || !skipped_whitespace) &&
+            (self.rope.char(idx).is_ascii_whitespace() || skipped_whitespace) {
+                
+            idx = mv(idx);
+
+            if !self.rope.char(idx).is_ascii_whitespace() {
+                skipped_whitespace = true;
+            }
+        }
+
+        idx
     }
 
     pub fn caret_move_down(&mut self) {
@@ -306,7 +341,7 @@ impl TextFile {
         }
     }
 
-    pub fn backspace(&mut self) {
+    pub fn backspace(&mut self, ctrl: bool) {
         if self.selection.is_some() {
             self.delete_selection();
             return;
@@ -316,10 +351,19 @@ impl TextFile {
             return;
         }
 
-        self.apply_new_event(Event::RemoveChar(self.rope.char(self.char_idx - 1), self.char_idx - 1));
+        if !ctrl {
+            self.apply_new_event(Event::RemoveChar(self.rope.char(self.char_idx - 1), self.char_idx - 1));
+            return;
+        }
+
+        let end_of_deletion_idx = self.char_idx;
+        self.char_idx -= 1;
+        let start_of_deletion_idx = self.ctrl_idx_move(true);
+
+        self.apply_new_event(Event::RemoveString(self.rope.slice(start_of_deletion_idx..end_of_deletion_idx).to_string(), start_of_deletion_idx));
     }
 
-    pub fn delete(&mut self) {
+    pub fn delete(&mut self, ctrl: bool) {
         if self.selection.is_some() {
             self.delete_selection();
             return;
@@ -329,7 +373,16 @@ impl TextFile {
             return;
         }
 
-        self.apply_new_event(Event::RemoveChar(self.rope.char(self.char_idx), self.char_idx));
+        if !ctrl {
+            self.apply_new_event(Event::RemoveChar(self.rope.char(self.char_idx), self.char_idx));
+            return;
+        }
+
+        let start_of_deletion_idx = self.char_idx;
+        self.char_idx += 1;
+        let end_of_deletion_idx = self.ctrl_idx_move(false);
+
+        self.apply_new_event(Event::RemoveString(self.rope.slice(start_of_deletion_idx..end_of_deletion_idx).to_string(), start_of_deletion_idx));
     }
 
     pub fn insert_char(&mut self, c: char) {
