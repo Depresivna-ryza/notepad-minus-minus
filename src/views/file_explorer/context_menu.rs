@@ -2,7 +2,7 @@ use dioxus::prelude::*;
 use tracing::info;
 
 use crate::models::files::DirectoryItem;
-use crate::views::dialogs::NewDirectoryDialogStruct;
+use crate::views::dialogs::{Operation, OperationDialogHandler};
 use crate::models::files::FileSystem;
 
 use std::time::Duration;
@@ -42,7 +42,7 @@ impl RightClickMenuState {
 pub fn RightClickMenu(directory_item: DirectoryItem) -> Element {
     let mut right_click_menu_state = use_context::<RightClickMenuState>();
     let mut focus_state = use_context::<Signal<FileSystem>>();
-    let mut new_directory_dialog_struct = use_context::<NewDirectoryDialogStruct>();
+    let mut operation_dialog_handler = use_context::<OperationDialogHandler>();
 
     let menu_position = right_click_menu_state.position.read();
 
@@ -52,7 +52,7 @@ pub fn RightClickMenu(directory_item: DirectoryItem) -> Element {
     };
 
     let mut button_pressed = use_signal(|| false);
-
+    
     rsx!(
         div {
             onmounted: move |e| {
@@ -85,8 +85,8 @@ pub fn RightClickMenu(directory_item: DirectoryItem) -> Element {
                         button { 
                             class: "option-button",
                             onclick: move |_| { 
-                                info!("path: {:?}", path.clone());
-                                new_directory_dialog_struct.set_path(path.clone());
+                                operation_dialog_handler.set_operation(Operation::CreateDirectory);
+                                operation_dialog_handler.set_path(path.clone());
                                 right_click_menu_state.close_menu();
                             },
                             "Create new directory", 

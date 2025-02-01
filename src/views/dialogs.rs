@@ -1,18 +1,29 @@
 use std::path::PathBuf;
 use std::fs;
+use std::rc::Rc;
 use tracing::info;
 
 use dioxus::prelude::*;
 
 #[derive(Clone)]
-pub struct NewDirectoryDialogStruct {
-    item_path: Signal<Option<PathBuf>>,
+pub enum Operation {
+    CreateDirectory,
+    CreateFile,
+    Rename,
+    Delete,
 }
 
-impl NewDirectoryDialogStruct {
+#[derive(Clone)]
+pub struct OperationDialogHandler {
+    item_path: Signal<Option<PathBuf>>,
+    operation: Signal<Option<Operation>>,
+}
+
+impl OperationDialogHandler {
     pub fn new() -> Self {
-        NewDirectoryDialogStruct {
+        OperationDialogHandler {
             item_path: Signal::new(Option::None),
+            operation: Signal::new(None),
         }
     }
 
@@ -28,16 +39,29 @@ impl NewDirectoryDialogStruct {
         self.item_path.set(None);
     }
 
-    pub fn is_path_set(&self) -> bool {
-        self.get_path().is_some()
+    pub fn get_operation(&self) -> Option<Operation> {
+        self.operation.read().clone()
     }
+
+    pub fn set_operation(&mut self, operation: Operation) {
+        self.operation.set(Some(operation));
+    }
+
+    pub fn clear_operation(&mut self) {
+        self.operation.set(None);
+    }
+
+    pub fn is_operation_set(&self) -> bool {
+        self.operation.read().is_some()
+    }
+
 }
 
 
 #[component]
 pub fn NewDirectoryDialog() -> Element {
     let new_directory_name = use_signal(|| String::new());
-    let mut new_directory_dialog_struct = use_context::<NewDirectoryDialogStruct>();
+    let mut new_directory_dialog_struct = use_context::<OperationDialogHandler>();
     
     let on_input = {
         let mut new_directory_name = new_directory_name.clone();
@@ -65,6 +89,7 @@ pub fn NewDirectoryDialog() -> Element {
                 
                 new_directory_name.set(String::new());
                 new_directory_dialog_struct.clear_path();
+                new_directory_dialog_struct.clear_operation();
             } else {
                 println!("Directory name cannot be empty.");
             }
@@ -92,3 +117,5 @@ pub fn NewDirectoryDialog() -> Element {
         }
     )
 }
+
+
