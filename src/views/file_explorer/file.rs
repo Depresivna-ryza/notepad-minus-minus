@@ -16,18 +16,16 @@ pub fn File(file: PathBuf) -> Element {
 
     let mut state = use_context::<Signal<FileSystem>>();
 
-    let style = if state.read().is_focused(&file) {
-        "color: red; margin: 5px 0px 5px 20px;"
-    } else {
-        "color: darkred; margin: 5px 0px 5px 20px;"
-    };
-
     let file1 = file.clone();
     let file2 = file.clone();
 
     rsx!(
         div {
-            style: {style},
+            class: if state.read().is_focused(&file) {
+                "item-text-selected"
+            } else {
+                "item-text"
+            },
             
             ondoubleclick: move |_| {
                 info!("File clicked: {:?}", file1.clone());

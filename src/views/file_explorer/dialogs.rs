@@ -50,15 +50,11 @@ pub fn RightClickMenu(directory_item: DirectoryItem) -> Element {
 
     rsx!(
         div {
+            class: "right-click-menu",
+
             style: "
-                position: absolute;
                 top: {menu_position.1}px;
                 left: {menu_position.0}px;
-                background: white;
-                border: 1px solid black;
-                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-                padding: 10px;
-                z-index: 1000;
             ",
 
             if let DirectoryItem::Directory(_) = directory_item {

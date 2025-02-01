@@ -50,3 +50,30 @@ span {
     -select: none;
     
 }
+
+.file-explorer {
+    flex: 1; 
+    background-color: lightgreen;
+    overflow-x: auto; 
+    overflow-y: auto;
+}
+
+/* Directory items */
+.item-text {
+    color: darkred; 
+    margin: 5px 0px 5px 20px;
+}
+
+.item-text-selected {
+    color: red; 
+    margin: 5px 0px 5px 20px;
+}
+
+.right-click-menu {
+    position: absolute;
+    background: white;
+    border: 1px solid black;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 10px;
+    z-index: 1000;
+}
