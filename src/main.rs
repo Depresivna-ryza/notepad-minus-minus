@@ -10,7 +10,7 @@ use models::panels::ShownPanels;
 use models::tabs::Tabs;
 use tracing::info;
 use views::editor::Editor;
-use views::fileexplorer::FileExplorer;
+use views::file_explorer::file_explorer::FileExplorer;
 use views::sessionexplorer::SessionsExplorer;
 use views::side_panel::SidePanel;
 use views::tabs::EditorTabs;

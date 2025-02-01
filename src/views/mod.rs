@@ -1,5 +1,5 @@
 pub mod editor;
-pub mod fileexplorer;
+pub mod file_explorer;
 pub mod sessionexplorer;
 pub mod tabs;
 pub mod side_panel;
