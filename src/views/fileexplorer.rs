@@ -6,7 +6,7 @@ use crate::models::{
 };
 
 use dioxus::prelude::*;
-use rfd::{AsyncFileDialog, FileDialog};
+use rfd::AsyncFileDialog;
 
 #[component]
 pub fn FileExplorer(tabs: Signal<Tabs>) -> Element {
