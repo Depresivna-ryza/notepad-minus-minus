@@ -21,7 +21,7 @@ pub fn FileExplorer(tabs: Signal<Tabs>) -> Element {
 
     rsx! {
         div {
-            style: "flex: 1; background-color: lightgreen; overflow-x: auto; overflow-y: auto;",
+            class: "file-explorer",
 
             a {"FileExplorer"}
 

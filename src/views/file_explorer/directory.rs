@@ -21,15 +21,9 @@ pub fn Directory(dir: Dir) -> Element {
     let path1 = dir.path.clone();
     let path2 = dir.path.clone();
 
-    let style = if state.read().is_focused(&dir.path) {
-        "color: red; margin: 5px 0px 5px 20px;"
-    } else {
-        "color: darkred; margin: 5px 0px 5px 20px;"
-    };
-
     rsx!(
         div {
-            style: "color: darkred; margin: 5px 0px 5px 20px;",
+            class: "item-text",
             div {
                 a {
                     style: "white-space: nowrap;",
@@ -40,7 +34,11 @@ pub fn Directory(dir: Dir) -> Element {
                 }
                 
                 a {
-                    style: {style},
+                    class: if state.read().is_focused(&dir.path) {
+                        "item-text-selected"
+                    } else {
+                        "item-text"
+                    },
                     
                     onclick: move |_| {
                         state.write().change_focus(&path2);
