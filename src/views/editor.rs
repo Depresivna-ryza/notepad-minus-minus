@@ -4,6 +4,7 @@ use crate::models::{tabs::Tabs, text::{Caret, TextFile}};
 
 use arboard::Clipboard;
 use dioxus::prelude::*;
+use itertools::Itertools;
 use tracing::info;
 
 #[component]
@@ -322,20 +323,29 @@ pub fn BottomStatusBar(
     caret_line: usize,
     char_idx: usize,
 ) -> Element {
+    let status = if let Some(ref f) = tabs.read().get_current_file() {
+        if let Some((start, end)) = f.selection {
+            let s = min(start, end);
+            let e = max(start, end);
+            let len = e - s;
+            let words = f.rope.slice(s..=e).chars().tuple_windows().filter(|(a, b)| a.is_whitespace() && !b.is_whitespace()).count() + 1;
+
+            format!("Selection: {len} chars, {words} words")
+        } else if let Some(x) = f.dirty_changes {
+            format!("{x} unsaved changes")
+        } else {
+            format!("(no changes)")
+        }
+    } else {
+        String::new()
+    };
+
     rsx! {
         div {
             style: "background-color: blue; height: 30px; display: flex; justify-content: flex-end; align-items: center;",
             span {
                 style: "margin-right: 10px;",
-                if let Some(ref f) = tabs.read().get_current_file() {
-                    if let Some(x) = f.dirty_changes {
-                        "{x} unsaved changes"
-                    } else {
-                        "(no changes)"
-                    }
-                } else {
-                    ""
-                }
+                "{status}"
             }
             
             div {
