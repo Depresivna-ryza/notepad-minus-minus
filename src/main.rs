@@ -14,9 +14,11 @@ use views::file_explorer::file_explorer::FileExplorer;
 use views::sessionexplorer::SessionsExplorer;
 use views::side_panel::SidePanel;
 use views::tabs::EditorTabs;
+use views::dialogs::{NewDirectoryDialogStruct, NewDirectoryDialog};
 
 use dioxus::prelude::*;
 use views::terminal::Terminal;
+use tracing::info;
 
 
 const FAVICON: Asset = asset!("/assets/favicon.ico");
@@ -31,6 +33,9 @@ fn main() {
 pub fn Layout() -> Element {
     let tabs = use_signal(Tabs::new);
     let shown_panels = ShownPanels::new();
+    
+    let new_directory_dialog_struct = use_context_provider(|| NewDirectoryDialogStruct::new());
+
 
     let mut terminal_height = use_signal(|| 200);
     let mut left_panel_width = use_signal(|| 100);
@@ -118,6 +123,10 @@ pub fn Layout() -> Element {
                     Terminal {
                         terminal_height: terminal_height
                     }
+                }
+
+                if new_directory_dialog_struct.is_path_set() {
+                    NewDirectoryDialog {}
                 }
             }
         }
