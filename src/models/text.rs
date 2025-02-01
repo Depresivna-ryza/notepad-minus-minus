@@ -1,7 +1,6 @@
-use std::{cmp::{max, min}, fs::read_to_string, path::{Path, PathBuf}};
+use std::{cmp::{max, min}, fs::read_to_string, path::PathBuf};
 
 use itertools::Itertools;
-use tracing::info;
 
 use super::event::Event;
 use ropey::{iter::Lines, Rope};
