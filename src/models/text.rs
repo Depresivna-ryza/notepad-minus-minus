@@ -391,7 +391,8 @@ impl TextFile {
     }
 
     pub fn cut_line(&mut self) -> String {
-        let (start_idx, end_idx) = self.get_current_line();
+        let start_idx = self.rope.line_to_char(self.get_caret().ln);
+        let end_idx = self.rope.line_to_char(self.get_caret().ln + 1);
         let res = self.rope.slice(start_idx..end_idx).to_string();
 
         self.apply_new_event(Event::RemoveString(self.rope.slice(start_idx..end_idx).to_string(), start_idx));
@@ -399,11 +400,24 @@ impl TextFile {
         res
     }
 
-    fn get_current_line(&self) -> (usize, usize) {
-        let start_idx = self.rope.line_to_char(self.get_caret().ln);
-        let end_idx = self.rope.line_to_char(self.get_caret().ln + 1);
+    pub fn move_line(&mut self, go_down: bool) {
+        // let remove_caret_line = match (go_down, self.get_caret().ln) {
+        //     (true, i) if i + 1 >= self.rope.len_lines() => return,
+        //     (false, 0) => return,
+        //     (true, i) => i,
+        //     (false, i) => i - 1,
+        // };
 
-        (start_idx, end_idx)
+        // let line_0 = self.rope.line_to_char(remove_caret_line);
+        // let line_1 = self.rope.line_to_char(remove_caret_line + 1);
+        // let line_2 = self.rope.line_to_char(remove_caret_line + 2);
+
+        // let removed_line_content = self.rope.slice(line_0..line_1).to_string();
+
+        // self.apply_new_event(Event::RemoveString(removed_line_content.clone(), line_0));
+        // self.apply_new_event(Event::AddString(removed_line_content, line_2 - (line_1 - line_0)));
+
+        self.apply_new_event(Event::MoveLine(self.get_caret().ln, go_down));
     }
 
     pub fn insert_char(&mut self, c: char) {
@@ -475,11 +489,31 @@ impl TextFile {
             Event::AddString(s,idx) => {
                 self.rope.insert(idx, &s);
                 let new_idx = idx + s.len();
-                self.char_idx = new_idx;
+                self.char_idx = 1.max(new_idx) - 1;
             }
             Event::RemoveString(s, idx) => {
                 self.rope.remove(idx..idx + s.len());
                 self.char_idx = idx;
+            }
+
+            Event::MoveLine(ln, go_down) => {
+                let remove_caret_line = match (go_down, ln) {
+                    (true, i) if i + 1 >= self.rope.len_lines() => return,
+                    (false, 0) => return,
+                    (true, i) => i,
+                    (false, i) => i - 1,
+                };
+        
+                let line_0 = self.rope.line_to_char(remove_caret_line);
+                let line_1 = self.rope.line_to_char(remove_caret_line + 1);
+                let line_2 = self.rope.line_to_char(remove_caret_line + 2);
+        
+                let removed_line_content = self.rope.slice(line_0..line_1).to_string();
+        
+                self.rope.remove(line_0..line_1);
+                self.rope.insert(line_2 - (line_1 - line_0), &removed_line_content);
+
+                self.char_idx = self.rope.line_to_char(if go_down {ln + 1} else {ln - 1});
             }
         }
     }
@@ -512,7 +546,13 @@ impl TextFile {
                 let new_idx = idx + s.len();
                 self.char_idx = new_idx;
             }
-            
+
+            Event::MoveLine(ln, go_down) => {
+                match (go_down) {
+                    (true) => self.apply_event(Event::MoveLine(ln + 1, false)),
+                    (false) => self.apply_event(Event::MoveLine(ln - 1, true)),
+                }
+            }
         }
 
         self.history_idx -= 1;
