@@ -5,6 +5,7 @@ use tracing::info;
 
 use crate::views::terminal;
 
+
 async fn launch_sh(shell: String) -> Arc<RwLock<Child>> {
     Arc::new(RwLock::new(Command::new(shell)
         .stdin(Stdio::piped())
