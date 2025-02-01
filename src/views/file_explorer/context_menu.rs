@@ -1,3 +1,4 @@
+use dioxus::html::button;
 use dioxus::prelude::*;
 use tracing::info;
 
@@ -46,13 +47,68 @@ pub fn RightClickMenu(directory_item: DirectoryItem) -> Element {
 
     let menu_position = right_click_menu_state.position.read();
 
+    let mut button_pressed = use_signal(|| false);
+
     let path = match directory_item {
         DirectoryItem::Directory(ref dir) => dir.path.clone(),
         DirectoryItem::File(ref path_buf) => path_buf.clone(),
     };
 
-    let mut button_pressed = use_signal(|| false);
-    
+    let create_directory = {
+        let path = path.clone();
+        let mut operation_dialog_handler = operation_dialog_handler.clone();
+
+        move |_| {
+            operation_dialog_handler.set_operation(Operation::CreateDirectory);
+            operation_dialog_handler.set_path(path.clone());
+            right_click_menu_state.close_menu();
+        }
+    };
+
+    let create_file = {
+        let path = path.clone();
+        let mut operation_dialog_handler = operation_dialog_handler.clone();
+
+        move |_| {
+            operation_dialog_handler.set_operation(Operation::CreateFile);
+            operation_dialog_handler.set_path(path.clone());
+            right_click_menu_state.close_menu();
+        }
+    };
+
+    let delete_dir = {
+        let path = path.clone();
+        let mut operation_dialog_handler = operation_dialog_handler.clone();
+
+        move |_| {
+            operation_dialog_handler.set_operation(Operation::DeleteDirectory);
+            operation_dialog_handler.set_path(path.clone());
+            right_click_menu_state.close_menu();
+        }
+    };
+
+    let delete_file = {
+        let path = path.clone();
+        let mut operation_dialog_handler = operation_dialog_handler.clone();
+
+        move |_| {
+            operation_dialog_handler.set_operation(Operation::DeleteFile);
+            operation_dialog_handler.set_path(path.clone());
+            right_click_menu_state.close_menu();
+        }
+    };
+
+    let rename = {
+        let path = path.clone();
+        let mut operation_dialog_handler = operation_dialog_handler.clone();
+
+        move |_| {
+            operation_dialog_handler.set_operation(Operation::Rename);
+            operation_dialog_handler.set_path(path.clone());
+            right_click_menu_state.close_menu();
+        }
+    };
+
     rsx!(
         div {
             onmounted: move |e| {
@@ -80,26 +136,47 @@ pub fn RightClickMenu(directory_item: DirectoryItem) -> Element {
             div {
                 onmousedown: move |_| button_pressed.set(true),
 
-                if let DirectoryItem::Directory(_) = directory_item {
-                    p { 
-                        button { 
-                            class: "option-button",
-                            onclick: move |_| { 
-                                operation_dialog_handler.set_operation(Operation::CreateDirectory);
-                                operation_dialog_handler.set_path(path.clone());
-                                right_click_menu_state.close_menu();
-                            },
-                            "Create new directory", 
-                        } 
-                    }
-                    p { 
-                        button { 
-                            "Create new file" 
-                        } 
-                    }
+                match directory_item {
+                    DirectoryItem::Directory(_) => rsx!(
+                        p { 
+                            button { 
+                                class: "option-button",
+                                onclick: create_directory,
+                                "Create new directory", 
+                            } 
+                        }
+                        p { 
+                            button { 
+                                class: "option-button",
+                                onclick: create_file,
+                                "Create new file" 
+                            } 
+                        }
+                        p { 
+                            button { 
+                                class: "option-button",
+                                onclick: delete_dir,
+                                "Delete" 
+                            } 
+                        }
+                    ),
+                    DirectoryItem::File(_) => rsx!(
+                        p {
+                            button {
+                                class: "option-button",
+                                onclick: delete_file,
+                                "Delete"
+                            }
+                        }
+                    ),
                 }
-                p { button { "Delete" } }
-                p { button { "Rename" } }
+                p { 
+                    button { 
+                        class: "option-button",
+                        onclick: rename,
+                        "Rename" 
+                    } 
+                }
             }
         }
     )

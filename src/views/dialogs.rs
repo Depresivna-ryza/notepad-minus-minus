@@ -9,8 +9,9 @@ use dioxus::prelude::*;
 pub enum Operation {
     CreateDirectory,
     CreateFile,
+    DeleteDirectory,
+    DeleteFile,
     Rename,
-    Delete,
 }
 
 #[derive(Clone)]
@@ -61,7 +62,7 @@ impl OperationDialogHandler {
 #[component]
 pub fn NewDirectoryDialog() -> Element {
     let new_directory_name = use_signal(|| String::new());
-    let mut new_directory_dialog_struct = use_context::<OperationDialogHandler>();
+    let mut operation_dialog_handler = use_context::<OperationDialogHandler>();
     
     let on_input = {
         let mut new_directory_name = new_directory_name.clone();
@@ -75,21 +76,20 @@ pub fn NewDirectoryDialog() -> Element {
 
         move |_| {
 
-            let path = match new_directory_dialog_struct.get_path() {
+            let path = match operation_dialog_handler.get_path() {
                 Some(path) => path,
                 None => panic!("Error path is empty"),
             };
 
             if !new_directory_name().is_empty() {
-                info!("path to new dir: {}/{}", path.to_str().expect(""), new_directory_name);
                 if let Err(error) = fs::create_dir(format!("{}/{}", path.to_str().expect(""), new_directory_name)) {
                     info!("Show Error Dialog: {}", error);
                     return;
                 }
                 
                 new_directory_name.set(String::new());
-                new_directory_dialog_struct.clear_path();
-                new_directory_dialog_struct.clear_operation();
+                operation_dialog_handler.clear_path();
+                operation_dialog_handler.clear_operation();
             } else {
                 println!("Directory name cannot be empty.");
             }
@@ -119,3 +119,201 @@ pub fn NewDirectoryDialog() -> Element {
 }
 
 
+#[component]
+pub fn NewFileDialog() -> Element {
+    let new_file_name = use_signal(|| String::new());
+    let mut operation_dialog_handler = use_context::<OperationDialogHandler>();
+    
+    let on_input = {
+        let mut new_file_name = new_file_name.clone();
+        move |evt: FormEvent| {
+            new_file_name.set(evt.value().clone());
+        }
+    };
+
+    let on_submit = {
+        let mut new_file_name = new_file_name.clone();
+
+        move |_| {
+
+            let path = match operation_dialog_handler.get_path() {
+                Some(path) => path,
+                None => panic!("Error path is empty"),
+            };
+
+            if !new_file_name().is_empty() {
+                if let Err(error) = fs::File::create(format!("{}/{}", path.to_str().expect(""), new_file_name)) {
+                    info!("Show Error Dialog: {}", error);
+                    return;
+                }
+                
+                new_file_name.set(String::new());
+                operation_dialog_handler.clear_path();
+                operation_dialog_handler.clear_operation();
+            } else {
+                println!("File name cannot be empty.");
+            }
+        }
+    };
+
+    rsx!(
+        div {
+            class: "dialog",
+            div {
+                class: "dialog-content",
+                h2 { "Create New File" }
+                input {
+                    class: "file-input",
+                    placeholder: "Enter file name...",
+                    value: "{new_file_name}",
+                    oninput: on_input,
+                }
+                button {
+                    class: "submit-button",
+                    onclick: on_submit,
+                    "Submit"
+                }
+            }
+        }
+    )
+}
+
+#[component]
+pub fn RenameDialog() -> Element {
+    let new_name = use_signal(|| String::new());
+    let mut operation_dialog_handler = use_context::<OperationDialogHandler>();
+
+    let on_input = {
+        let mut new_name = new_name.clone();
+        move |evt: FormEvent| {
+            new_name.set(evt.value().clone());
+        }
+    };
+
+    let on_submit = {
+        let mut new_name = new_name.clone();
+
+        move |_| {
+
+            let old_path = match operation_dialog_handler.get_path() {
+                Some(path) => path,
+                None => panic!("Error path is empty"),
+            };
+
+            let mut parent_path = old_path.clone();
+            parent_path.pop();
+
+            if !new_name().is_empty() {
+                if let Err(error) = fs::rename(old_path.to_str().expect(""), format!("{}/{}", parent_path.to_str().expect(""), new_name)) {
+                    info!("Show Error Dialog: {}", error);
+                    return;
+                }
+                
+                new_name.set(String::new());
+                operation_dialog_handler.clear_path();
+                operation_dialog_handler.clear_operation();
+            } else {
+                println!("File name cannot be empty.");
+            }
+        }
+    };
+
+    rsx!(
+        div {
+            class: "dialog",
+            div {
+                class: "dialog-content",
+                h2 { "Rename" }
+                input {
+                    class: "file-input",
+                    placeholder: "Enter new name...",
+                    value: "{new_name}",
+                    oninput: on_input,
+                }
+                button {
+                    class: "submit-button",
+                    onclick: on_submit,
+                    "Submit"
+                }
+            }
+        }
+    )
+}
+
+#[component]
+pub fn DeleteDirectoryDialog() -> Element {
+    let mut operation_dialog_handler = use_context::<OperationDialogHandler>();
+
+    let on_submit = {
+        move |_| {
+
+            let path = match operation_dialog_handler.get_path() {
+                Some(path) => path,
+                None => panic!("Error path is empty"),
+            };
+
+            if let Err(error) = fs::remove_dir_all(path.to_str().expect("")) {
+                info!("Show Error Dialog: {}", error);
+                return;
+            }
+            
+            operation_dialog_handler.clear_path();
+            operation_dialog_handler.clear_operation();
+        }
+    };
+
+    rsx!(
+        div {
+            class: "dialog",
+            div {
+                class: "dialog-content",
+                h2 { "Delete" }
+                p { "Are you sure you want to delete this item?" }
+                button {
+                    class: "submit-button",
+                    onclick: on_submit,
+                    "Yes"
+                }
+            }
+        }
+    )
+}
+    
+#[component]
+pub fn DeleteFileDialog() -> Element {
+    let mut operation_dialog_handler = use_context::<OperationDialogHandler>();
+
+    let on_submit = {
+        move |_| {
+
+            let path = match operation_dialog_handler.get_path() {
+                Some(path) => path,
+                None => panic!("Error path is empty"),
+            };
+
+            if let Err(error) = fs::remove_file(path.to_str().expect("")) {
+                info!("Show Error Dialog: {}", error);
+                return;
+            }
+            
+            operation_dialog_handler.clear_path();
+            operation_dialog_handler.clear_operation();
+        }
+    };
+
+    rsx!(
+        div {
+            class: "dialog",
+            div {
+                class: "dialog-content",
+                h2 { "Delete" }
+                p { "Are you sure you want to delete this item?" }
+                button {
+                    class: "submit-button",
+                    onclick: on_submit,
+                    "Yes"
+                }
+            }
+        }
+    )
+}

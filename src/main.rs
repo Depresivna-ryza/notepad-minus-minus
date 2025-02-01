@@ -13,6 +13,7 @@ use views::file_explorer::file_explorer::FileExplorer;
 use views::sessionexplorer::SessionsExplorer;
 use views::side_panel::SidePanel;
 use views::tabs::EditorTabs;
+use views::dialogs::{Operation, OperationDialogHandler, NewDirectoryDialog, NewFileDialog, DeleteDirectoryDialog, DeleteFileDialog, RenameDialog};
 
 use dioxus::prelude::*;
 use views::terminal::Terminal;

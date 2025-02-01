@@ -36,13 +36,6 @@ pub fn File(file: PathBuf) -> Element {
 
             },
 
-            tabindex: 0,
-            
-            onfocusout: move |_| {
-                right_click_menu_state.close_menu();
-                state.write().clear_focus();
-            },
-
             onclick: move |_| {
                 state.write().change_focus(&file2);
             },
