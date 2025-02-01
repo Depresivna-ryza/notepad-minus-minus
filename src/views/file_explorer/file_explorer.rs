@@ -5,17 +5,19 @@ use crate::models::{
     files::{Dir, FileSystem},
     tabs::Tabs,
 };
+use crate::views::file_explorer::dialogs::{OperationDialogHandler, OperationDialog};
 
 #[component]
 pub fn FileExplorer(tabs: Signal<Tabs>) -> Element {
-    let mut file_system_state = use_context::<Signal<FileSystem>>();
     use_context_provider(|| tabs);
+    let mut file_system = use_context_provider(|| Signal::new(FileSystem::new()));
+    let operation_dialog_handler = use_context_provider(|| OperationDialogHandler::new());
 
     let change_root_directory = move |_| async move {
         if let Some(dir_path) = AsyncFileDialog::new().pick_folder().await {
             let mut root_dir = Dir::new(dir_path.path().to_path_buf());
             root_dir.open();
-            file_system_state.replace(FileSystem::from(root_dir));
+            file_system.replace(FileSystem::from(root_dir));
         }
     };
 
@@ -30,13 +32,17 @@ pub fn FileExplorer(tabs: Signal<Tabs>) -> Element {
                 "Change root directory"
             }
 
-            if let Some(dir) = file_system_state.read().root.clone() {
+            if let Some(dir) = file_system.read().root.clone() {
                 Directory { dir }
             } else {
                 div {
                     "No directory selected"
                 }
             }
+        }
+
+        if operation_dialog_handler.is_operation_set() {
+            OperationDialog {}
         }
     }
 }

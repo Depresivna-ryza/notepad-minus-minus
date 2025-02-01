@@ -10,11 +10,11 @@ pub struct FileSystem {
 
 impl FileSystem {
     pub fn from(root: Dir) -> Self {
-        Self { root: Some(root), focus: None }
+        Self { root: Some(root), focus: None, }
     }
 
     pub fn new() -> Self {
-        Self { root: None, focus: None }
+        Self { root: None, focus: None, }
     }
 
     pub fn find(&mut self, path: &PathBuf) {
