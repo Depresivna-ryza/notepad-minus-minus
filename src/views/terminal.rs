@@ -1,7 +1,9 @@
-use std::{env, process::Stdio, sync::Arc, time::Duration, vec};
-use dioxus::prelude::*;
+use std::{env, ops::{Deref, Not}, process::Stdio, rc::Rc, sync::Arc, time::Duration, vec};
+use dioxus::{desktop::{tao::event, window}, html::{canvas::height, g::direction, geometry::euclid::Rect, mo}, prelude::*};
 use tokio::{io::{AsyncBufReadExt, AsyncWriteExt, BufReader}, process::{Child, Command}, sync::RwLock, time::{sleep, timeout}};
+use tracing::info;
 
+use crate::views::terminal;
 
 
 async fn launch_sh(shell: String) -> Arc<RwLock<Child>> {
@@ -14,21 +16,23 @@ async fn launch_sh(shell: String) -> Arc<RwLock<Child>> {
 }
 
 #[component]
-pub fn Terminal(hidden: Signal<bool>) -> Element {
+pub fn Terminal(terminal_height: Signal<i32>) -> Element {
     let future = use_resource(|| async move {
-
-        let shell = "cmd".to_string();
-
+        let shell = env::var("SHELL")
+            .unwrap_or_else(|_| {
+                dbg!("No SHELL env var found, using cmd");
+                "cmd".to_string()
+            });
 
         sleep(Duration::from_secs(3)).await;
         launch_sh(shell).await
     });
 
-
     rsx! {
         div {
-            hidden: hidden,
-            style: "height: 200px",
+            tabindex: 0,
+            height: terminal_height.read().to_string() + "px",
+            style: "background-color: black; color: white",
             TerminalText {future}
         }
     }
