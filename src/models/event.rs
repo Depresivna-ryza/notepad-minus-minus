@@ -6,4 +6,6 @@ pub enum Event {
 
     AddString(String, usize),
     RemoveString(String, usize),
+
+    MoveLine(usize, bool)
 }

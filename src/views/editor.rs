@@ -3,7 +3,7 @@ use std::{cmp::{max, min}, rc::Rc};
 use crate::models::{tabs::Tabs, text::{Caret, TextFile}};
 
 use arboard::Clipboard;
-use dioxus::prelude::*;
+use dioxus::{html::img::alt, prelude::*};
 use itertools::Itertools;
 use tracing::info;
 
@@ -36,6 +36,7 @@ pub fn Editor(tabs: Signal<Tabs>) -> Element {
                 
                 let ctrl = e.modifiers().contains(Modifiers::CONTROL);
                 let shift = e.modifiers().contains(Modifiers::SHIFT);
+                let altt = e.modifiers().contains(Modifiers::ALT);
 
                 info!("key pressed: {:?}, ctrl: {}, shift: {}", e.key(), ctrl, shift);
 
@@ -46,81 +47,81 @@ pub fn Editor(tabs: Signal<Tabs>) -> Element {
 
                 let old_idx = file.char_idx;
 
-                match (e.key(), ctrl, shift) {
-                    (Key::End, ctrl, selection) => {
+                match (e.key(), ctrl, shift, altt) {
+                    (Key::End, ctrl, selection, false) => {
                         file.caret_move_line_end(ctrl);
                         file.set_selection(selection, old_idx);
                     }
-                    (Key::Home, ctrl, selection) => {
+                    (Key::Home, ctrl, selection, false) => {
                         file.caret_move_line_start(ctrl);
                         file.set_selection(selection, old_idx);
                     }
-                    (Key::ArrowLeft, ctrl, selection) => {
+                    (Key::ArrowLeft, ctrl, selection, false) => {
                         file.caret_move_left(ctrl);
                         file.set_selection(selection, old_idx);
                     }
-                    (Key::ArrowRight, ctrl, selection) => {
+                    (Key::ArrowRight, ctrl, selection, false) => {
                         file.caret_move_right(ctrl);
                         file.set_selection(selection, old_idx);
                     }
-                    (Key::ArrowUp, false, selection) => {
+                    (Key::ArrowUp, false, selection, false) => {
                         file.caret_move_up();
                         file.set_selection(selection, old_idx);
                     }
-                    (Key::ArrowDown, false, selection) => {
+                    (Key::ArrowDown, false, selection, false) => {
                         file.caret_move_down();
                         file.set_selection(selection, old_idx);
                     }
 
-                    (Key::Character(s), false, _) => {
+                    (Key::Character(s), false, _, false) => {
                         if let Some(c) = s.chars().next() {
                             info!("inserting char: {:?}", c);
                             file.insert_char(c);
                         }
                     }
                     
-                    (Key::Backspace, ctrl, false) => {
+                    (Key::Backspace, ctrl, false, false) => {
                         file.backspace(ctrl);
                     }
                     
-                    (Key::Delete, ctrl, false) => {
+                    (Key::Delete, ctrl, false, false) => {
                         file.delete(ctrl);
                     }
 
-                    (Key::Escape, false, _) => {
+                    (Key::Escape, false, _, false) => {
                         file.clear_selection();
                     }
 
-                    (Key::Enter, false, _) => {
+                    (Key::Enter, false, _, false) => {
                         file.clear_selection();
                         file.insert_newline();
                     }
 
-                    (Key::Tab, false, _) => {
+                    (Key::Tab, false, _, false) => {
                         file.clear_selection();
                         file.insert_tab();
                         e.prevent_default();
                     }
 
-                    (Key::Character(z), true, false) if &z.to_ascii_lowercase() == "z" => {
+                    (Key::Character(z), true, false, false) if &z.to_ascii_lowercase() == "z" => {
                         info!("undo pressed");
                         file.clear_selection();
                         file.undo_event();
                     }
 
-                    (Key::Character(z), true, true) if &z.to_ascii_lowercase() == "z" => {
+                    (Key::Character(z), true, true, false) if &z.to_ascii_lowercase() == "z" => {
                         info!("redo pressed");
                         file.clear_selection();
                         file.redo_event();
                     }
 
-                    (Key::Character(s), true, false) if &s.to_ascii_lowercase() == "s" => {
+                    (Key::Character(s), true, false, false) if &s.to_ascii_lowercase() == "s" => {
                         info!("save pressed");
                         file.clear_selection();
                         file.save_to_file();
                     }
 
-                    (Key::Character(x), true, false) if &x.to_ascii_lowercase() == "x" => {
+                    (Key::Character(x), true, false, false) if &x.to_ascii_lowercase() == "x" => {
                         info!("cut pressed");
                         let line = file.cut_line();
 
@@ -135,7 +136,7 @@ pub fn Editor(tabs: Signal<Tabs>) -> Element {
                     }
                         
     
-                    (Key::Character(c), true, false) if &c.to_ascii_lowercase() == "c" => {
+                    (Key::Character(c), true, false, false) if &c.to_ascii_lowercase() == "c" => {
                         info!("copy pressed");
                         if let Some(selection) = file.get_selection() {
                             let mut clipboard = Clipboard::new().ok();
@@ -149,7 +150,7 @@ pub fn Editor(tabs: Signal<Tabs>) -> Element {
                         }
                     }
 
-                    (Key::Character(v), true, false) if &v.to_ascii_lowercase() == "v" => {
+                    (Key::Character(v), true, false, false) if &v.to_ascii_lowercase() == "v" => {
                         info!("paste pressed");
                         let mut clipboard = Clipboard::new().ok();
                         if let Some(clip) = clipboard.as_mut() {
@@ -159,9 +160,18 @@ pub fn Editor(tabs: Signal<Tabs>) -> Element {
                         }
                     }
 
+                    (Key::ArrowDown, false, false, true) => {
+                        info!("alt + down pressed");
+                        file.move_line(true);
+                    }
+
+                    (Key::ArrowUp, false, false, true) => {
+                        info!("alt + up pressed");
+                        file.move_line(false);
+                    }
                     
 
-                    (_,_,_) => {}
+                    (_,_,_,_) => {}
                 }
 
             },
