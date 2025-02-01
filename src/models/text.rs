@@ -306,7 +306,6 @@ impl TextFile {
         }
     }
 
-
     pub fn backspace(&mut self) {
         if self.selection.is_some() {
             self.delete_selection();
