@@ -394,30 +394,30 @@ impl TextFile {
         let start_idx = self.rope.line_to_char(self.get_caret().ln);
         let end_idx = self.rope.line_to_char(self.get_caret().ln + 1);
         let res = self.rope.slice(start_idx..end_idx).to_string();
-
+        
         self.apply_new_event(Event::RemoveString(self.rope.slice(start_idx..end_idx).to_string(), start_idx));
-
+        
         res
     }
 
     pub fn move_line(&mut self, go_down: bool) {
-        // let remove_caret_line = match (go_down, self.get_caret().ln) {
-        //     (true, i) if i + 1 >= self.rope.len_lines() => return,
-        //     (false, 0) => return,
-        //     (true, i) => i,
-        //     (false, i) => i - 1,
-        // };
-
-        // let line_0 = self.rope.line_to_char(remove_caret_line);
-        // let line_1 = self.rope.line_to_char(remove_caret_line + 1);
-        // let line_2 = self.rope.line_to_char(remove_caret_line + 2);
-
-        // let removed_line_content = self.rope.slice(line_0..line_1).to_string();
-
-        // self.apply_new_event(Event::RemoveString(removed_line_content.clone(), line_0));
-        // self.apply_new_event(Event::AddString(removed_line_content, line_2 - (line_1 - line_0)));
-
         self.apply_new_event(Event::MoveLine(self.get_caret().ln, go_down));
+    }
+
+    pub fn duplicate_line(&mut self, go_down: bool) {
+        let start_idx = self.rope.line_to_char(self.get_caret().ln);
+        let end_idx = self.rope.line_to_char(self.get_caret().ln + 1);
+        let line_offset = self.char_idx - start_idx;
+
+        let chars = self.rope.slice(start_idx..end_idx).chars().into_iter();
+
+        let shifted_line = chars.cycle().skip(line_offset).take(end_idx - start_idx).collect::<String>();
+
+        self.apply_new_event(Event::AddString(shifted_line, self.char_idx));
+
+        if (!go_down) {
+            self.char_idx -= end_idx - start_idx;
+        }
     }
 
     pub fn insert_char(&mut self, c: char) {
@@ -489,7 +489,7 @@ impl TextFile {
             Event::AddString(s,idx) => {
                 self.rope.insert(idx, &s);
                 let new_idx = idx + s.len();
-                self.char_idx = 1.max(new_idx) - 1;
+                self.char_idx = new_idx;
             }
             Event::RemoveString(s, idx) => {
                 self.rope.remove(idx..idx + s.len());
