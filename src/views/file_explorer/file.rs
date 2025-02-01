@@ -1,7 +1,7 @@
 use dioxus::prelude::*;
 use tracing::info;
 use std::path::PathBuf;
-use crate::views::file_explorer::dialogs::{RightClickMenuState, RightClickMenu};
+use crate::views::file_explorer::context_menu::{RightClickMenuState, RightClickMenu};
 use crate::models::{
     files::{FileSystem, DirectoryItem},
     tabs::Tabs,
@@ -18,6 +18,7 @@ pub fn File(file: PathBuf) -> Element {
 
     let file1 = file.clone();
     let file2 = file.clone();
+    let file3 = file.clone();
 
     rsx!(
         div {
@@ -28,11 +29,18 @@ pub fn File(file: PathBuf) -> Element {
             },
             
             ondoubleclick: move |_| {
-                info!("File clicked: {:?}", file1.clone());
+                info!("File clicked: {:?}", file.clone());
 
                 let mut tabs = use_context::<Signal<Tabs>>();
                 tabs.write().open_tab(file1.clone());
 
+            },
+
+            tabindex: 0,
+            
+            onfocusout: move |_| {
+                right_click_menu_state.close_menu();
+                state.write().clear_focus();
             },
 
             onclick: move |_| {
@@ -41,6 +49,7 @@ pub fn File(file: PathBuf) -> Element {
             
             oncontextmenu: move |event: MouseEvent| {
                 right_click_menu_state.handle_right_click(event);
+                state.write().change_focus(&file3);
             },
             
             " {file_name}"

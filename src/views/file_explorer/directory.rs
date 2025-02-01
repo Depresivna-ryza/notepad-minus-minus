@@ -1,8 +1,9 @@
 use dioxus::prelude::*;
+use tracing::info;
 use crate::models::files::{Dir, DirectoryItem, DirectoryItems, FileSystem};
 use crate::views::file_explorer::{
     file::File,
-    dialogs::{RightClickMenu, RightClickMenuState},
+    context_menu::{RightClickMenu, RightClickMenuState},
 };
 
 #[component]
@@ -11,7 +12,7 @@ pub fn Directory(dir: Dir) -> Element {
     
     let mut right_click_menu_state = use_context_provider(|| RightClickMenuState::new());
     
-    let mut state = use_context::<Signal<FileSystem>>();
+    let mut focus_state = use_context::<Signal<FileSystem>>();
 
     let opened_string = match dir.children {
         DirectoryItems::OpenedDirectory(_) => "[v]",
@@ -20,6 +21,7 @@ pub fn Directory(dir: Dir) -> Element {
 
     let path1 = dir.path.clone();
     let path2 = dir.path.clone();
+    let path3 = dir.path.clone();
 
     rsx!(
         div {
@@ -28,24 +30,32 @@ pub fn Directory(dir: Dir) -> Element {
                 a {
                     style: "white-space: nowrap;",
                     onclick: move |_| {
-                        state.write().find(&path1);
+                        focus_state.write().find(&path1);
                     },
                     " {opened_string} "
                 }
                 
                 a {
-                    class: if state.read().is_focused(&dir.path) {
+                    class: if focus_state.read().is_focused(&dir.path) {
                         "item-text-selected"
                     } else {
                         "item-text"
                     },
                     
                     onclick: move |_| {
-                        state.write().change_focus(&path2);
+                        focus_state.write().change_focus(&path2);
                     },
+
+                    tabindex: 0,
                     
+                    onfocusout: move |_| {
+                        right_click_menu_state.close_menu();
+                        focus_state.write().clear_focus();
+                    },
+
                     oncontextmenu: move |event: MouseEvent| {
                         right_click_menu_state.handle_right_click(event);
+                        focus_state.write().change_focus(&path3);
                     },
                     " {dir_name} "
                 }
