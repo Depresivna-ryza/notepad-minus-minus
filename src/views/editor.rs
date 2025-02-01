@@ -161,15 +161,24 @@ pub fn Editor(tabs: Signal<Tabs>) -> Element {
                     }
 
                     (Key::ArrowDown, false, false, true) => {
-                        info!("alt + down pressed");
+                        info!("move line down pressed");
                         file.move_line(true);
                     }
 
                     (Key::ArrowUp, false, false, true) => {
-                        info!("alt + up pressed");
+                        info!("move line up pressed");
                         file.move_line(false);
                     }
+
+                    (Key::ArrowDown, false, true, true) => {
+                        info!("duplicate line down pressed");
+                        file.duplicate_line(true);
+                    }
                     
+                    (Key::ArrowUp, false, true, true) => {
+                        info!("duplicate line up pressed");
+                        file.duplicate_line(false);
+                    }
 
                     (_,_,_,_) => {}
                 }
