@@ -76,13 +76,18 @@ impl TextFile {
         self.rope.to_string()
     }
 
-    pub fn chars(&self) -> Lines {
-        self.rope.lines()
+    pub fn chars(&self) -> Vec<String> {
+        self.rope.lines().filter_map(|line| {
+            if line.len_chars() == 0 {
+                None
+            } else {
+                Some(line.to_string())
+            }
+        }).collect()
     }
 
     pub fn get_caret(&self) -> Caret {
         let mut char_sum = 0;
-
 
         for (i, line) in self.rope.lines().enumerate() {
             char_sum += line.len_chars();
@@ -381,6 +386,27 @@ impl TextFile {
         let start_of_deletion_idx = self.char_idx;
         self.char_idx += 1;
         let end_of_deletion_idx = self.ctrl_idx_move(false);
+
+        self.apply_new_event(Event::RemoveString(self.rope.slice(start_of_deletion_idx..end_of_deletion_idx).to_string(), start_of_deletion_idx));
+    }
+
+    pub fn cut_line(&mut self) {
+        let caret = self.get_caret();
+
+        let mut start_of_deletion_idx = 0;
+        let mut end_of_deletion_idx = 0;
+
+        for (i, line) in self.rope.lines().enumerate() {
+            if i == caret.ln {
+                start_of_deletion_idx = end_of_deletion_idx;
+                end_of_deletion_idx += line.len_chars();
+            } else if i == caret.ln + 1 {
+                end_of_deletion_idx += line.len_chars();
+                break;
+            } else {
+                end_of_deletion_idx += line.len_chars();
+            }
+        }
 
         self.apply_new_event(Event::RemoveString(self.rope.slice(start_of_deletion_idx..end_of_deletion_idx).to_string(), start_of_deletion_idx));
     }
