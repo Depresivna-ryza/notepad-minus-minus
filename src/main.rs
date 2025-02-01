@@ -9,6 +9,7 @@ use dotenvy::dotenv;
 use models::panels::ShownPanels;
 use models::tabs::Tabs;
 use tracing::info;
+use views::edit_history::EditHistory;
 use views::editor::Editor;
 use views::fileexplorer::FileExplorer;
 use views::sessionexplorer::SessionsExplorer;
@@ -151,6 +152,11 @@ pub fn LeftPanel(tabs: Signal<Tabs>, width: Signal<i32>, shown_panels: ShownPane
                     type: "text",
                     placeholder: "Search",
                 }
+            }
+            div {
+                style: "display: flex; flex-direction: column; flex: 1",
+                display: if !*shown_panels.history.read() {"none"} else {"flex"},
+                EditHistory {tabs}
             }
         }
     }

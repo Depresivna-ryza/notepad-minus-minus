@@ -1,6 +1,6 @@
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Event {
+pub enum HistoryEvent {
     AddChar(char, usize),
     RemoveChar(char, usize),
 
