@@ -35,40 +35,11 @@ static DEFAULT_COLOR: &str = "#282c34";
 
 
 #[component]
-fn TerminalLauncher(terminal_states: Signal<Vec<String>>, active_index: Signal<Option<i32>>) -> Element {
+pub fn Terminal() -> Element {
     let mut input_text: Signal<String> = use_signal(|| "".to_string());
 
-    return rsx! {
-        div {
-            style: "display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; width: 100%;",
-            input {
-                style: "margin-top: 10px; padding: 10px; border: 1px solid #ccc; border-radius: 5px; width: 80%; max-width: 300px;",
-                oninput: move |e| *input_text.write() = e.value(),
-                value: input_text,
-                placeholder: "Enter command to launch terminal (cmd)",
-                onkeydown: move |event| {
-                    if event.key() == Key::Enter {
-                        terminal_states.write().push(input_text.read().to_string());
-                        *active_index.write() = Some(terminal_states.read().len() as i32 - 1);
-                    }
-                }
-            }
-            button {
-            style: "margin-top: 10px; padding: 10px 20px; border: none; border-radius: 5px; background-color: #61dafb; color: #282c34; cursor: pointer;",
-            onclick: move |_| {
-                    terminal_states.write().push(input_text.read().to_string());
-                    *active_index.write() = Some(terminal_states.read().len() as i32 - 1);
-                },
-                "Launch terminal"
-            }
-        }
-    }
-}
-
-#[component]
-pub fn Terminal() -> Element {
     let mut terminal_states: Signal<Vec<String>> = use_signal(|| vec![]);
-    let mut active_index: Signal<Option<i32>> = use_signal(|| Option::None);
+    let mut active_index: Signal<Option<usize>> = use_signal(|| Option::None);
 
     rsx! {
         div {
@@ -76,43 +47,70 @@ pub fn Terminal() -> Element {
 
         div {
             tabindex: 0,
-            style: "background-color: black; color: white; height: 100%; width: 100%;  display: flex; flex-direction: row; flex: 1",
+            style: "background-color: black; color: white; height: 100%;  display: flex; flex-direction: row; flex: 1",
             for (index, command) in terminal_states.read().iter().enumerate() {
                 div {
-                    style: "display: flex; flex: 1; width: 100%;",
-                    display: if active_index.read().clone() == Some(index as i32) {
+                    style: "display: flex; flex: 1;",
+                    display: if active_index.read().clone() == Some(index) {
                             "flex"
                         } else {
                             "none"
                         },
+
                     ConcreteTerminal {
-                        command: command.clone(),
+                        command: command.clone()
                     }
                 }
             }
 
             if active_index.read().clone().is_none() {
-                    TerminalLauncher {
-                        terminal_states: terminal_states,
-                        active_index: active_index,
+                div {
+                    style: "display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; width: 100%;",
+                    input {
+                        style: "margin-top: 10px; padding: 10px; border: 1px solid #ccc; border-radius: 5px; width: 80%; max-width: 300px;",
+                        oninput: move |e| *input_text.write() = e.value(),
+                        value: input_text,
+                        placeholder: "Enter command to launch terminal (cmd)",
+                        onkeydown: move |event| {
+                            if event.key() == Key::Enter {
+                                let cmd = input_text.read().to_string();
+                                terminal_states.write().push(cmd);
+                                *active_index.write() = Some(terminal_states.peek().len() - 1);
+                            }
+                        }
                     }
+                    button {
+                    style: "margin-top: 10px; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;",
+                    background_color: HIGHLIGHT_COLOR,
+                    color: DEFAULT_COLOR,
+                    onclick: move |_| {
+                            let cmd = input_text.read().to_string();
+                            terminal_states.write().push(cmd);
+                            *active_index.write() = Some(terminal_states.peek().len() - 1);
+                        },
+                        "Launch terminal"
+                    }
+                }
                 }
             }
 
             div {
-                style: "display: flex; flex-direction: column; background-color: rgb(6, 7, 10); padding: 10px; overflow-y: auto;",
+                style: "display: flex; flex-direction: column; background-color: rgb(15, 16, 24); border-left: solid rgb(50, 52, 87) 1px; padding: 10px; overflow-y: auto;",
                 for (index, command) in terminal_states.read().iter().enumerate() {
-                    button {
-                        style: ICON_STYLE,
-                        title: command.clone(),
-                        background_color: if active_index.read().clone() == Some(index as i32) {HIGHLIGHT_COLOR} else {DEFAULT_COLOR},
-                        color: "white",
-
-                        onclick: move |_| *active_index.write() = Some(index as i32),
-                        Icon {
-                            icon: Shape::CommandLine,
-                            size: ICON_SIZE,
+                    div {  
+                        style: "display: flex; position: relative;",
+                        button {
+                            style: ICON_STYLE,
+                            title: command.clone(),
+                            background_color: if active_index.read().clone() == Some(index) {HIGHLIGHT_COLOR} else {DEFAULT_COLOR},
+                            color: "white",
+                            onclick: move |_| *active_index.write() = Some(index),
+                            Icon {
+                                icon: Shape::CommandLine,
+                                size: ICON_SIZE,
+                            }
                         }
+                        
                     }
                 }
 
@@ -122,8 +120,9 @@ pub fn Terminal() -> Element {
                     background_color: if active_index.read().clone().is_none() {HIGHLIGHT_COLOR} else {DEFAULT_COLOR},
                     color: "#282c34",
                     oncontextmenu: move |_| {
+                        let len = terminal_states.read().len();
                         terminal_states.write().push("cmd".to_string()); 
-                        *active_index.write() = Some(terminal_states.read().len() as i32 - 1);
+                        *active_index.write() = Some(terminal_states.read().len() - 1);
                     },
                     onclick: move |_| *active_index.write() = None,
                     Icon {
@@ -136,11 +135,18 @@ pub fn Terminal() -> Element {
     }
 }
 
+
+static TERMINAL_STYLE: &str = 
+    "background-color: rgb(6, 7, 17); color: white; 
+    width: 100% ; flex: 1; overflow-y: scroll;
+    margin: 0; padding: 0; border: 0; cursor: text; scroll-behavior: smooth";
+
+
 #[component]
 fn TerminalLoading() -> Element {
     rsx! {
         pre {
-            style: "background-color: white; color: black;",
+            style: TERMINAL_STYLE,
             "Loading..."
         }
     }
@@ -151,7 +157,7 @@ fn ConcreteTerminal(command: String) -> Element {
     let process = use_resource(move ||{
         let command = command.clone();
         async move {
-            sleep(Duration::from_secs(3)).await;
+            sleep(Duration::from_secs(1)).await;
             launch_sh(command).await
         }
     });
@@ -166,10 +172,10 @@ fn ConcreteTerminal(command: String) -> Element {
     let mut input_text = use_signal(|| "".to_string());
     let mut commands = use_signal(|| "".to_string());
 
-    let write_rc = Arc::clone(sh1); //idk how to to it nicely :/
+    let write_rc = Arc::clone(sh1);
     let _ = use_resource(move || {
         //pushing commands to stdin
-        let sh = Arc::clone(&write_rc); //idk how to to it nicely :/
+        let sh = Arc::clone(&write_rc);
         async move {
             let mut sh = sh.write().await;
             let stdin = sh.stdin.as_mut().unwrap();
@@ -185,13 +191,12 @@ fn ConcreteTerminal(command: String) -> Element {
         }
     });
 
-    let read_rc = Arc::clone(sh1); //idk how to to it nicely :/
+    let read_rc = Arc::clone(sh1); 
     use_future(move || {
         //pulling commands from stdout
-        let sh = Arc::clone(&read_rc); //idk how to to it nicely :/
+        let sh = Arc::clone(&read_rc); 
         async move {
             loop {
-                // info!("Reading from stdout");
                 sleep(Duration::from_millis(10)).await;
                 let mut sh = sh.write().await;
                 let stdout = sh.stdout.as_mut().expect("Failed to get stdout");
@@ -216,13 +221,15 @@ fn ConcreteTerminal(command: String) -> Element {
         div {
             style: "display: flex; flex-direction: column; height: 100%; width: 100%; ",
             pre {
-                style: "background-color: black; color: white; width: 100% ; flex: 1; overflow-y: scroll;
-                        margin: 0; padding: 0; border: 0; cursor: text; scroll-behavior: smooth;",
-                "{buffer}"
+                style: TERMINAL_STYLE,
+                background_color: "rgb(6, 7, 17)",
+                color: "rgb(140, 255, 111)",
+                "{buffer.read()}"
             }
 
             input {
-                style: "background-color: black; color: white; height: 30px; width: 100%; margin: 0; padding: 0; border: 0;",
+                style: "color: white; height: 30px; width: 100%; margin: 0; padding: 0; border: 0;",
+                background_color: "rgb(19, 18, 34)",
                 value: input_text,
 
                 oninput: move |event| {
@@ -232,7 +239,6 @@ fn ConcreteTerminal(command: String) -> Element {
 
                 onkeydown: move |event| {
                     if event.key() == Key::Enter {
-                        dbg!("Enter pressed");
                         *commands.write() = format!("{}\n", input_text.read());
                         *input_text.write() = "".to_string();
                     }
