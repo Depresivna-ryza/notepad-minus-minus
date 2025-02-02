@@ -58,6 +58,12 @@ impl FileSystem {
     pub fn clear_focus(&mut self) {
         self.focused_fs_item = None;
     }
+    
+    pub fn reload(&mut self) {
+        if let Some(root) = &mut self.root {
+            root.reload_children();
+        }
+    }
 
     pub fn is_focused(&self, path: &PathBuf) -> bool {
         self.focused_fs_item.as_ref() == Some(path)
@@ -111,6 +117,18 @@ impl Directory {
             path: path.to_path_buf(),
             children: Vec::new(),
             opened: false,
+        }
+    }
+
+    pub fn reload_children(&mut self) {
+        self.reload_direct_children();
+
+        for child in self.children.iter_mut() {
+            if let FileSystemItem::Directory(dir) = child {
+                if dir.is_opened() {
+                    dir.reload_children();
+                }
+            }
         }
     }
     

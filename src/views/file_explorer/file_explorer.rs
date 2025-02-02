@@ -5,6 +5,8 @@ use crate::models::tabs::Tabs;
 use crate::views::dialogs::fs_operations::{OperationDialogHandler, OperationDialog};
 use crate::models::file_system::FileSystem;
 
+use std::time::Duration as duration;
+
 #[component]
 pub fn FileExplorer(tabs: Signal<Tabs>) -> Element {
     use_context_provider(|| tabs);
@@ -17,6 +19,13 @@ pub fn FileExplorer(tabs: Signal<Tabs>) -> Element {
             file_system.replace(FileSystem::from(dir_path.path()));
         }
     };
+
+    use_future(move || async move {
+        loop {
+            tokio::time::sleep(duration::from_secs(1)).await;
+            file_system.write().reload();
+        }
+    });
 
     rsx! {
         div {
