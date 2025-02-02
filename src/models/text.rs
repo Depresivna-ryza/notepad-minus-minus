@@ -462,18 +462,20 @@ impl TextFile {
             return;
         };
 
+        let mut new_event : HistoryEvent;
+
         match(last.clone(), new.clone()) {
             (HistoryEvent::AddChar(c1, idx1), 
              HistoryEvent::AddChar(c2, idx2)) 
              if 
              idx1 + 1== idx2 && 
              c1.is_ascii_whitespace() == c2.is_ascii_whitespace() => {
-                self.event_history.pop();
-                self.event_history.pop();
-                self.history_idx -= 1;
+                // self.event_history.pop();
+                // self.event_history.pop();
 
-                self.event_history.push(HistoryEvent::AddString(format!("{}{}", c1, c2), idx1));
+                // self.event_history.push(HistoryEvent::AddString(format!("{}{}", c1, c2), idx1));
 
+                new_event = HistoryEvent::AddString(format!("{}{}", c1, c2), idx1);
             }
 
             (HistoryEvent::AddString(s1, idx1), 
@@ -481,11 +483,7 @@ impl TextFile {
             if idx1 + s1.len() == idx2 && (
             (c2.is_ascii_whitespace() && s1.chars().all(|c| c.is_ascii_whitespace())) ||
             (!c2.is_ascii_whitespace() && s1.chars().all(|c| !c.is_ascii_whitespace()))) => {
-                self.event_history.pop();
-                self.event_history.pop();
-                self.history_idx -= 1;
-
-                self.event_history.push(HistoryEvent::AddString(format!("{}{}", s1, c2), idx1));
+                new_event = HistoryEvent::AddString(format!("{}{}", s1, c2), idx1);
             }
             
 
@@ -494,11 +492,7 @@ impl TextFile {
              if 
              idx1 == idx2 + 1 && 
              c1.is_ascii_whitespace() == c2.is_ascii_whitespace() => {
-                self.event_history.pop();
-                self.event_history.pop();
-                self.history_idx -= 1;
-
-                self.event_history.push(HistoryEvent::RemoveString(format!("{}{}", c2, c1), idx2));
+                new_event = HistoryEvent::RemoveString(format!("{}{}", c2, c1), idx2);
             }
 
             (HistoryEvent::RemoveChar(c1, idx1), 
@@ -506,11 +500,7 @@ impl TextFile {
             if 
             idx1 == idx2 && 
             c1.is_ascii_whitespace() == c2.is_ascii_whitespace() => {
-               self.event_history.pop();
-               self.event_history.pop();
-               self.history_idx -= 1;
-
-               self.event_history.push(HistoryEvent::RemoveString(format!("{}{}", c1, c2), idx2));
+                new_event = HistoryEvent::RemoveString(format!("{}{}", c1, c2), idx2);
             }
 
             (HistoryEvent::RemoveString(s1, idx1),
@@ -518,11 +508,7 @@ impl TextFile {
             if idx1 == idx2 + 1 && 
             ((c2.is_ascii_whitespace() && s1.chars().all(|c| c.is_ascii_whitespace())) ||
             (!c2.is_ascii_whitespace() && s1.chars().all(|c| !c.is_ascii_whitespace())))  => {
-                self.event_history.pop();
-                self.event_history.pop();
-                self.history_idx -= 1;
-
-                self.event_history.push(HistoryEvent::RemoveString(format!("{}{}", c2, s1), idx2));
+                new_event = HistoryEvent::RemoveString(format!("{}{}", c2, s1), idx2);
             }
 
             (HistoryEvent::RemoveString(s1, idx1),
@@ -530,15 +516,21 @@ impl TextFile {
             if idx1 == idx2 && 
             ((c2.is_ascii_whitespace() && s1.chars().all(|c| c.is_ascii_whitespace())) ||
             (!c2.is_ascii_whitespace() && s1.chars().all(|c| !c.is_ascii_whitespace())))  => {
-                self.event_history.pop();
-                self.event_history.pop();
-                self.history_idx -= 1;
-
-                self.event_history.push(HistoryEvent::RemoveString(format!("{}{}", s1, c2), idx2));
+                new_event = HistoryEvent::RemoveString(format!("{}{}", s1, c2), idx2);
             }
 
-            _ => {}
+            _ => {return}
+
         }
+
+        self.event_history.pop();
+        self.event_history.pop();
+        self.event_history.push(new_event);
+
+        self.history_idx -= 1;
+
+        self.dirty_changes = Some(self.dirty_changes.and_then(|d| d.checked_sub(1)).unwrap_or(0));
+            
     }
 
     pub fn delete_selection(&mut self) {
