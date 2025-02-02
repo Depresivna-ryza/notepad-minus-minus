@@ -1,6 +1,18 @@
 use std::path::PathBuf;
-
 use itertools::Itertools;
+
+
+#[derive(PartialEq, Clone, Debug)]
+pub enum DirectoryItems {
+    ClosedDirectory,
+    OpenedDirectory(Vec<DirectoryItem>),
+}
+
+#[derive(PartialEq, Clone, Debug)]
+pub enum DirectoryItem {
+    File(PathBuf),
+    Directory(Dir),
+}
 
 #[derive(PartialEq, Clone, Debug)]
 pub struct FileSystem {
@@ -100,16 +112,4 @@ impl Dir {
     pub fn close(&mut self) {
         self.children = DirectoryItems::ClosedDirectory;
     }
-}
-
-#[derive(PartialEq, Clone, Debug)]
-pub enum DirectoryItems {
-    ClosedDirectory,
-    OpenedDirectory(Vec<DirectoryItem>),
-}
-
-#[derive(PartialEq, Clone, Debug)]
-pub enum DirectoryItem {
-    File(PathBuf),
-    Directory(Dir),
 }
