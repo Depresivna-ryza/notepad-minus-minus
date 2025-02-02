@@ -13,8 +13,8 @@ pub fn Directory(dir: Dir) -> Element {
     let dir_name = dir.path.file_name().unwrap().to_str().unwrap();
 
     let opened_string = match dir.children {
-        DirectoryItems::OpenedDirectory(_) => "[v]",
-        DirectoryItems::ClosedDirectory => "[>]",
+        DirectoryItems::OpenedDirectory(_) => "v",
+        DirectoryItems::ClosedDirectory => ">",
     };
 
     let item_text_class = if focus_state.read().is_focused(&dir.path) {
