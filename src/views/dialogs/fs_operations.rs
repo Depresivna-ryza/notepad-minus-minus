@@ -1,8 +1,9 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::fs;
 use dioxus::prelude::*;
 
-use crate::{models::files::{Dir, FileSystem}, views::dialogs::error::ErrorDialogHandler};
+use crate::views::dialogs::error::ErrorDialogHandler;
+use crate::models::file_system::FileSystem;
 
 #[derive(Clone)]
 pub enum Operation {
@@ -145,8 +146,8 @@ fn CreateRenameDialog() -> Element {
             }
 
             // Refresh the file system if the root directory is being renamed
-            if matches!(operation_dialog_handler.get_operation(), Some(Operation::Rename)) && file_system.read().get_root_path().map_or(false, |root_path| path == *root_path) {
-                file_system.replace(FileSystem::from(Dir::new(PathBuf::from(&new_path))));
+            if matches!(operation_dialog_handler.get_operation(), Some(Operation::Rename)) && file_system.read().get_root().map_or(false, |root| path == *root.get_path()) {
+                file_system.replace(FileSystem::from(Path::new(&new_path)));
                 operation_dialog_handler.clear();
                 return;
             }
@@ -157,9 +158,7 @@ fn CreateRenameDialog() -> Element {
             }
 
             // Refresh
-            file_system.write().find(&path);
-            file_system.write().find(&path);
-            
+            file_system.write().reload_directory(&path);
             operation_dialog_handler.clear();
         }
     };
@@ -230,7 +229,7 @@ fn DeleteDialog() -> Element {
             }
             
             // Refresh the file system if the root directory is being deleted
-            if file_system.read().get_root_path().map_or(false, |root_path| path == *root_path) {
+            if file_system.read().get_root().map_or(false, |root| path == *root.get_path()) {
                 file_system.replace(FileSystem::new());
                 operation_dialog_handler.clear();
                 return;
@@ -238,9 +237,7 @@ fn DeleteDialog() -> Element {
 
             // Refresh
             path.pop();
-            file_system.write().find(&path);
-            file_system.write().find(&path);
-            
+            file_system.write().reload_directory(&path);
             operation_dialog_handler.clear();
         }
     };

@@ -1,11 +1,9 @@
 use dioxus::prelude::*;
 use tracing::info;
 use std::path::PathBuf;
+use crate::models::file_system::{FileSystemItem, FileSystem};
 use crate::views::file_explorer::context_menu::{RightClickMenuHandler, RightClickMenu};
-use crate::models::{
-    files::{FileSystem, DirectoryItem},
-    tabs::Tabs,
-};
+use crate::models::tabs::Tabs;
 
 
 #[component]
@@ -48,7 +46,7 @@ pub fn File(file: PathBuf) -> Element {
         }
         
         if right_click_menu_handler.is_open() {
-            RightClickMenu { directory_item: DirectoryItem::File(file.clone()) }
+            RightClickMenu { fs_item: FileSystemItem::File(file.clone()) }
         }
     )
 }
