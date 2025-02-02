@@ -95,7 +95,8 @@ pub fn Layout() -> Element {
                         display: if 
                             !*shown_panels.search.read() && 
                             !*shown_panels.file_tree.read() &&
-                            !*shown_panels.sessions.read() {"none"} else {"flex"},
+                            !*shown_panels.sessions.read() &&
+                            !*shown_panels.history.read() {"none"} else {"flex"},
                         LeftPanel {
                             tabs,
                             width: left_panel_width,
@@ -154,7 +155,7 @@ pub fn LeftPanel(tabs: Signal<Tabs>, width: Signal<i32>, shown_panels: ShownPane
                 }
             }
             div {
-                style: "display: flex; flex-direction: column; flex: 1",
+                style: "display: flex; flex-direction: column; flex: 1; max-height: 100%; overflow: hidden",
                 display: if !*shown_panels.history.read() {"none"} else {"flex"},
                 EditHistory {tabs}
             }

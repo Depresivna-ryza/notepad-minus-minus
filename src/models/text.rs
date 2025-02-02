@@ -35,7 +35,7 @@ pub struct TextFile {
     pub char_idx: usize,
 
     pub event_history: Vec<HistoryEvent>,
-    history_idx: usize,
+    pub history_idx: usize,
     pub dirty_changes: Option<usize>,
 
     pub selection: Option<(usize, usize)>,
@@ -187,24 +187,6 @@ impl TextFile {
             }
 
             (true, i) => {
-                // let mut new_char_idx = i + 1;    
-
-                // let mut skipped_whitespace = !self.rope.char(new_char_idx).is_ascii_whitespace();
-
-                // while new_char_idx < self.rope.len_chars() - 1 && 
-                //     self.rope.char(new_char_idx) != '\n' &&
-                //     (self.rope.char(new_char_idx).is_ascii_alphanumeric() || !skipped_whitespace) &&
-                //     (self.rope.char(new_char_idx).is_ascii_whitespace() || skipped_whitespace) {
-                        
-                //     new_char_idx += 1;
-
-                //     if !self.rope.char(new_char_idx).is_ascii_whitespace() {
-                //         skipped_whitespace = true;
-                //     }
-                // }
-
-                // self.char_idx = new_char_idx;
-
                 self.char_idx = i + 1;
                 self.char_idx = self.ctrl_idx_move(false);
             }
@@ -230,7 +212,9 @@ impl TextFile {
         while idx != mv(idx) &&
             self.rope.char(idx) != '\n' &&
             (self.rope.char(idx).is_ascii_alphanumeric() || !skipped_whitespace) &&
-            (self.rope.char(idx).is_ascii_whitespace() || skipped_whitespace) {
+            (self.rope.char(idx).is_ascii_whitespace() || skipped_whitespace) &&
+            (!go_left || !skipped_whitespace || !self.rope.char(mv(idx)).is_ascii_whitespace())
+            {
                 
             idx = mv(idx);
 
@@ -461,6 +445,100 @@ impl TextFile {
         self.history_idx += 1;
 
         self.dirty_changes = Some(self.dirty_changes.map(|d| d + 1).unwrap_or(1));
+
+        self.ammend_history();
+    }
+
+    pub fn ammend_history(&mut self) {
+        if self.history_idx != self.event_history.len() || self.event_history.len() < 2 {
+            return;
+        }
+
+        let Some(new) = self.event_history.last().cloned() else {
+            return;
+        };
+
+        let Some(last) = self.event_history.get(self.history_idx - 2).cloned() else {
+            return;
+        };
+
+        match(last.clone(), new.clone()) {
+            (HistoryEvent::AddChar(c1, idx1), 
+             HistoryEvent::AddChar(c2, idx2)) 
+             if 
+             idx1 + 1== idx2 && 
+             c1.is_ascii_whitespace() == c2.is_ascii_whitespace() => {
+                self.event_history.pop();
+                self.event_history.pop();
+                self.history_idx -= 1;
+
+                self.event_history.push(HistoryEvent::AddString(format!("{}{}", c1, c2), idx1));
+
+            }
+
+            (HistoryEvent::AddString(s1, idx1), 
+            HistoryEvent::AddChar(c2, idx2)) 
+            if idx1 + s1.len() == idx2 && (
+            (c2.is_ascii_whitespace() && s1.chars().all(|c| c.is_ascii_whitespace())) ||
+            (!c2.is_ascii_whitespace() && s1.chars().all(|c| !c.is_ascii_whitespace()))) => {
+                self.event_history.pop();
+                self.event_history.pop();
+                self.history_idx -= 1;
+
+                self.event_history.push(HistoryEvent::AddString(format!("{}{}", s1, c2), idx1));
+            }
+            
+
+            (HistoryEvent::RemoveChar(c1, idx1), 
+             HistoryEvent::RemoveChar(c2, idx2)) 
+             if 
+             idx1 == idx2 + 1 && 
+             c1.is_ascii_whitespace() == c2.is_ascii_whitespace() => {
+                self.event_history.pop();
+                self.event_history.pop();
+                self.history_idx -= 1;
+
+                self.event_history.push(HistoryEvent::RemoveString(format!("{}{}", c2, c1), idx2));
+            }
+
+            (HistoryEvent::RemoveChar(c1, idx1), 
+            HistoryEvent::RemoveChar(c2, idx2)) 
+            if 
+            idx1 == idx2 && 
+            c1.is_ascii_whitespace() == c2.is_ascii_whitespace() => {
+               self.event_history.pop();
+               self.event_history.pop();
+               self.history_idx -= 1;
+
+               self.event_history.push(HistoryEvent::RemoveString(format!("{}{}", c1, c2), idx2));
+            }
+
+            (HistoryEvent::RemoveString(s1, idx1),
+            HistoryEvent::RemoveChar(c2, idx2))
+            if idx1 == idx2 + 1 && 
+            ((c2.is_ascii_whitespace() && s1.chars().all(|c| c.is_ascii_whitespace())) ||
+            (!c2.is_ascii_whitespace() && s1.chars().all(|c| !c.is_ascii_whitespace())))  => {
+                self.event_history.pop();
+                self.event_history.pop();
+                self.history_idx -= 1;
+
+                self.event_history.push(HistoryEvent::RemoveString(format!("{}{}", c2, s1), idx2));
+            }
+
+            (HistoryEvent::RemoveString(s1, idx1),
+            HistoryEvent::RemoveChar(c2, idx2))
+            if idx1 == idx2 && 
+            ((c2.is_ascii_whitespace() && s1.chars().all(|c| c.is_ascii_whitespace())) ||
+            (!c2.is_ascii_whitespace() && s1.chars().all(|c| !c.is_ascii_whitespace())))  => {
+                self.event_history.pop();
+                self.event_history.pop();
+                self.history_idx -= 1;
+
+                self.event_history.push(HistoryEvent::RemoveString(format!("{}{}", s1, c2), idx2));
+            }
+
+            _ => {}
+        }
     }
 
     pub fn delete_selection(&mut self) {
@@ -572,5 +650,17 @@ impl TextFile {
         self.history_idx += 1;
 
         self.dirty_changes = Some(self.dirty_changes.map(|d| d + 1).unwrap_or(1));
+    }
+
+    pub fn go_to_history_idx(&mut self, idx: usize) {
+        if idx > self.history_idx {
+            for _ in 0..(idx - self.history_idx) {
+                self.redo_event();
+            }
+        } else {
+            for _ in 0..(self.history_idx - idx) {
+                self.undo_event();
+            }
+        }
     }
 }
