@@ -19,7 +19,12 @@ impl Display for HistoryEvent {
             match s {
                 " " => String::from("_"),
                 "\n" => String::from("⏎"),
-                s => String::from(s)
+                s if s.chars().all(char::is_whitespace) => s.chars().map(|c| match c {
+                    ' ' => '_',
+                    '\n' => '⏎',
+                    _ => c
+                }).collect(),
+                s => s.to_string()
             }
         };
 
