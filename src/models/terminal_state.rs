@@ -37,6 +37,20 @@ impl TerminalStates {
         self.states.remove(index);
         self.buffers.remove(index);
         self.input_texts.remove(index);
+
+        if self.active_index.clone() == Some(index) {
+            self.active_index = None;
+        }
+
+        let Some(active_i) = self.active_index.clone() else {
+            return;
+        };
+
+        if active_i > index {
+            self.active_index = Some(active_i - 1); 
+        } else if active_i == index && active_i == self.len() {
+            self.active_index = None;
+        }
     }
 
     pub fn len(&self) -> usize {
