@@ -1,27 +1,52 @@
 use dioxus::prelude::*;
-use tracing::info;
 use crate::models::files::{Dir, DirectoryItem, DirectoryItems, FileSystem};
 use crate::views::file_explorer::{
     file::File,
-    context_menu::{RightClickMenu, RightClickMenuState},
+    context_menu::{RightClickMenu, RightClickMenuHandler},
 };
 
 #[component]
 pub fn Directory(dir: Dir) -> Element {
-    let dir_name = dir.path.file_name().unwrap().to_str().unwrap();
-    
-    let mut right_click_menu_state = use_context_provider(|| RightClickMenuState::new());
-    
+    let mut right_click_menu_handler = use_context_provider(|| RightClickMenuHandler::new());
     let mut focus_state = use_context::<Signal<FileSystem>>();
+
+    let dir_name = dir.path.file_name().unwrap().to_str().unwrap();
 
     let opened_string = match dir.children {
         DirectoryItems::OpenedDirectory(_) => "[v]",
         DirectoryItems::ClosedDirectory => "[>]",
     };
 
-    let path1 = dir.path.clone();
-    let path2 = dir.path.clone();
-    let path3 = dir.path.clone();
+    let item_text_class = if focus_state.read().is_focused(&dir.path) {
+        "item-text-selected"
+    } else {
+        "item-text"
+    };
+
+    let open_close = {
+        let path = dir.path.clone();
+
+        move |_| {
+            focus_state.write().find(&path);
+        }
+    };
+
+    let change_focus = {
+        let path = dir.path.clone();
+
+        move |_| {
+            focus_state.write().change_focus(&path);
+        }
+    };
+
+    let open_right_click_menu = {
+        let path = dir.path.clone();
+
+        move |event: MouseEvent| {
+            right_click_menu_handler.handle_right_click(event);
+            focus_state.write().change_focus(&path);
+        }
+    };
 
     rsx!(
         div {
@@ -29,33 +54,21 @@ pub fn Directory(dir: Dir) -> Element {
             div {
                 a {
                     style: "white-space: nowrap;",
-                    onclick: move |_| {
-                        focus_state.write().find(&path1);
-                    },
+                    onclick: open_close,
+
                     " {opened_string} "
                 }
                 
                 a {
-                    class: if focus_state.read().is_focused(&dir.path) {
-                        "item-text-selected"
-                    } else {
-                        "item-text"
-                    },
-                    
-                    onclick: move |_| {
-                        focus_state.write().change_focus(&path2);
-                    },
-
-                    oncontextmenu: move |event: MouseEvent| {
-                        right_click_menu_state.handle_right_click(event);
-                        focus_state.write().change_focus(&path3);
-                    },
+                    class: item_text_class,
+                    onclick: change_focus,
+                    oncontextmenu: open_right_click_menu,
 
                     " {dir_name} "
                 }
             }
             
-            if right_click_menu_state.is_open() {
+            if right_click_menu_handler.is_open() {
                 RightClickMenu { directory_item: DirectoryItem::Directory(dir.clone()) }
             }
             
