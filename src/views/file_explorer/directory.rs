@@ -50,6 +50,14 @@ pub fn DirectoryComponent(path: PathBuf) -> Element {
         }
     };
 
+    let style = {
+        if file_system.read().directory_is_opened(&path) {
+            "border-left: 1px solid grey; "
+        } else {
+            ""
+        }
+    };
+
     rsx!(
         div {
             class: "item-text",
@@ -69,21 +77,24 @@ pub fn DirectoryComponent(path: PathBuf) -> Element {
                     " { file_system.read().get_directory_name(&path) } "
                 }
             }
+            div {
+                style: style,
             
-            if right_click_menu_handler.is_open() {
-                RightClickMenu { fs_item: FileSystemItem::Directory(Directory::from(&path.clone())) }
-            }
-            
-            if file_system.read().directory_is_opened(&path) {
-                for item in file_system.read().get_directory_children(&path).iter() {
-                    if let FileSystemItem::Directory(dir) = item {
-                        DirectoryComponent { path: dir.get_path().clone() }
-                    }
+                if right_click_menu_handler.is_open() {
+                    RightClickMenu { fs_item: FileSystemItem::Directory(Directory::from(&path.clone())) }
                 }
+                
+                if file_system.read().directory_is_opened(&path) {
+                    for item in file_system.read().get_directory_children(&path).iter() {
+                        if let FileSystemItem::Directory(dir) = item {
+                            DirectoryComponent { path: dir.get_path().clone() }
+                        }
+                    }
 
-                for item in file_system.read().get_directory_children(&path).iter() {
-                    if let FileSystemItem::File(file) = item {
-                        File { file: file.clone() }
+                    for item in file_system.read().get_directory_children(&path).iter() {
+                        if let FileSystemItem::File(file) = item {
+                            File { file: file.clone() }
+                        }
                     }
                 }
             }
