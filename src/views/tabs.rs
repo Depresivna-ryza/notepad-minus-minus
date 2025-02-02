@@ -1,9 +1,9 @@
 use std::path::PathBuf;
 
-use dioxus::prelude::*;
+use dioxus::{html::g::strikethrough_thickness, prelude::*};
 use tracing::info;
 
-use crate::models::tabs::Tabs;
+use crate::models::tabs::{Tabs, Tab};
 
 #[component]
 pub fn EditorTabs(tabs: Signal<Tabs>) -> Element {
@@ -12,15 +12,15 @@ pub fn EditorTabs(tabs: Signal<Tabs>) -> Element {
             style: "background-color: pink; height: 70px; display: flex; overflow-x: auto;",
 
             for tab in tabs.read().opened_tabs.iter() {
-                Tab { file_path: tab.path.clone(), tabs }
+                TabView { file: tab.clone(), tabs }
             }
         }
     }
 }
 
 #[component]
-pub fn Tab(file_path: ReadOnlySignal<PathBuf>, tabs: Signal<Tabs>) -> Element {
-    let file_name_short = use_memo(move || match file_path().file_name() {
+pub fn TabView(file: ReadOnlySignal<Tab>, tabs: Signal<Tabs>) -> Element {
+    let file_name_short = use_memo(move || match file().file.path.file_name() {
         None => "Invalid file".to_string(),
         Some(f) => match f.to_str() {
             None => "Invalid file".to_string(),
@@ -28,21 +28,40 @@ pub fn Tab(file_path: ReadOnlySignal<PathBuf>, tabs: Signal<Tabs>) -> Element {
         },
     });
 
-    let is_current = use_memo(move || tabs.read().current_file == Some(file_path()));
+    let is_current = use_memo(move || tabs.read().current_file == Some(file().file.path));
+    let exists = use_memo(move || file().file.path.exists());
+
+    use_future(move || async move {
+        loop {
+            tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+
+            let path = file().file.path.clone();
+            let exists = path.exists();
+            
+            tabs.write().update_existance(path, exists);
+            
+        }
+    });
 
     rsx! {
         div {
-            style: if is_current() {
-                //the leading whitespace is necessary, otherwise the style breaks the app :)
-                " min-width: 300px; border: 3px solid blue; margin: 1px; padding: 5px; background-color: yellow; color: black;"
-            } else {
-                " min-width: 300px; border: 3px solid blue; margin: 1px; padding: 5px;"
+            style: "min-width: 300px; border: 3px solid blue; margin: 1px; padding: 5px;".to_string() + 
+
+            match is_current() {
+                true => "background-color: yellow; color: black;",
+                false => ""
+            } +
+
+            match exists() {
+                true => "",
+                false => "color: red; font-weight: bold; font-style: italic; text-decoration: line-through; text-decoration-style: wavy",
             },
+
 
             a {
                 onclick: move |_| {
-                    tabs.write().set_current_file(file_path());
-                    info!("current file changed to: {:?}", file_path);
+                    tabs.write().set_current_file(file().file.path);
+                    info!("current file changed to: {:?}", file().file.path);
                 },
                 "{file_name_short}"
             }
@@ -50,8 +69,8 @@ pub fn Tab(file_path: ReadOnlySignal<PathBuf>, tabs: Signal<Tabs>) -> Element {
             button {
                 style: "margin-left: 5px;",
                 onclick: move |_| {
-                    tabs.write().close_tab(file_path());
-                    info!("tab closed: {:?}", file_path);
+                    tabs.write().close_tab(file().file.path);
+                    info!("tab closed: {:?}", file().file.path);
                 },
                 "X"
             }
