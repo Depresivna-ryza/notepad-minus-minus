@@ -3,7 +3,7 @@ use std::{cmp::{max, min}, fs::read_to_string, path::{Path, PathBuf}};
 use itertools::Itertools;
 use tracing::info;
 
-use super::event::HistoryEvent;
+use super::historyevent::HistoryEvent;
 use ropey::{iter::Lines, Rope};
 
 

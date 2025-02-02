@@ -1,6 +1,6 @@
 use dioxus::prelude::*;
 
-use crate::models::{event::HistoryEvent, tabs::Tabs};
+use crate::models::{historyevent::HistoryEvent, tabs::Tabs};
 
 
 
