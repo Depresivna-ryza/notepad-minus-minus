@@ -111,14 +111,13 @@ pub fn Layout() -> Element {
                 }
 
                 div {
+                    height: terminal_height.read().to_string() + "px",
                     hidden: !*shown_panels.terminal.read(),
                     div {
                         onmousedown: move |_| is_terminal_slider_pressed.set(true),
                         style: "border-top: 3px solid red; cursor: ns-resize",
-                    }
-                    Terminal {
-                        terminal_height: terminal_height
-                    }
+                    } 
+                    Terminal {}
                 }
             }
         }

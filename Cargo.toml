@@ -18,6 +18,7 @@ tracing = "0.1.41"
 tokio = { version = "1.43.0", features = ["full"] }
 dotenvy = "0.15.7"
 rayon = "1.10.0"
+uuid = { version = "1.1", features = ["v4"] }
 
 
 [features]
