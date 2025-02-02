@@ -3,7 +3,8 @@ use std::{cmp::{max, min}, rc::Rc};
 use crate::models::{tabs::Tabs, text::{Caret, TextFile}};
 
 use arboard::Clipboard;
-use dioxus::prelude::*;
+use dioxus::{html::img::alt, prelude::*};
+use itertools::Itertools;
 use tracing::info;
 
 #[component]
@@ -35,6 +36,7 @@ pub fn Editor(tabs: Signal<Tabs>) -> Element {
                 
                 let ctrl = e.modifiers().contains(Modifiers::CONTROL);
                 let shift = e.modifiers().contains(Modifiers::SHIFT);
+                let altt = e.modifiers().contains(Modifiers::ALT);
 
                 info!("key pressed: {:?}, ctrl: {}, shift: {}", e.key(), ctrl, shift);
 
@@ -45,72 +47,96 @@ pub fn Editor(tabs: Signal<Tabs>) -> Element {
 
                 let old_idx = file.char_idx;
 
-                match (e.key(), ctrl, shift) {
-                    (Key::End, _, _ ) => {
-                        file.delete_selection();
-                    }
-
-                    (Key::ArrowLeft, false, selection) => {
-                        file.caret_move_left();
-
+                match (e.key(), ctrl, shift, altt) {
+                    (Key::End, ctrl, selection, false) => {
+                        file.caret_move_line_end(ctrl);
                         file.set_selection(selection, old_idx);
                     }
-                    (Key::ArrowRight, false, selection) => {
-                        file.caret_move_right();
+                    (Key::Home, ctrl, selection, false) => {
+                        file.caret_move_line_start(ctrl);
                         file.set_selection(selection, old_idx);
                     }
-                    (Key::ArrowUp, false, selection) => {
+                    (Key::ArrowLeft, ctrl, selection, false) => {
+                        file.caret_move_left(ctrl);
+                        file.set_selection(selection, old_idx);
+                    }
+                    (Key::ArrowRight, ctrl, selection, false) => {
+                        file.caret_move_right(ctrl);
+                        file.set_selection(selection, old_idx);
+                    }
+                    (Key::ArrowUp, false, selection, false) => {
                         file.caret_move_up();
                         file.set_selection(selection, old_idx);
                     }
-                    (Key::ArrowDown, false, selection) => {
+                    (Key::ArrowDown, false, selection, false) => {
                         file.caret_move_down();
                         file.set_selection(selection, old_idx);
                     }
 
-                    (Key::Escape, false, _) => {
-                        file.clear_selection();
-                    }
-
-                    (Key::Character(s), false, _) => {
+                    (Key::Character(s), false, _, false) => {
                         if let Some(c) = s.chars().next() {
                             info!("inserting char: {:?}", c);
                             file.insert_char(c);
                         }
                     }
                     
-                    (Key::Backspace, false, _) => {
-                        file.backspace();
+                    (Key::Backspace, ctrl, false, false) => {
+                        file.backspace(ctrl);
+                    }
+                    
+                    (Key::Delete, ctrl, false, false) => {
+                        file.delete(ctrl);
                     }
 
-                    (Key::Delete, false, _) => {
-                        file.delete();
+                    (Key::Escape, false, _, false) => {
+                        file.clear_selection();
                     }
 
-                    (Key::Enter, false, _) => {
+                    (Key::Enter, false, _, false) => {
                         file.clear_selection();
                         file.insert_newline();
                     }
 
-                    (Key::Character(z), true, false) if &z.to_ascii_lowercase() == "z" => {
+                    (Key::Tab, false, _, false) => {
+                        file.clear_selection();
+                        file.insert_tab();
+                        e.prevent_default();
+                    }
+
+                    (Key::Character(z), true, false, false) if &z.to_ascii_lowercase() == "z" => {
                         info!("undo pressed");
                         file.clear_selection();
                         file.undo_event();
                     }
 
-                    (Key::Character(z), true, true) if &z.to_ascii_lowercase() == "z" => {
+                    (Key::Character(z), true, true, false) if &z.to_ascii_lowercase() == "z" => {
                         info!("redo pressed");
                         file.clear_selection();
                         file.redo_event();
                     }
 
-                    (Key::Character(s), true, false) if &s.to_ascii_lowercase() == "s" => {
+                    (Key::Character(s), true, false, false) if &s.to_ascii_lowercase() == "s" => {
                         info!("save pressed");
                         file.clear_selection();
                         file.save_to_file();
                     }
 
-                    (Key::Character(c), true, false) if &c.to_ascii_lowercase() == "c" => {
+                    (Key::Character(x), true, false, false) if &x.to_ascii_lowercase() == "x" => {
+                        info!("cut pressed");
+                        let line = file.cut_line();
+
+                        let mut clipboard = Clipboard::new().ok();
+                        if let Some(clip) = clipboard.as_mut() {
+                            if let Err(_) = clip.set_text(line.clone()) {
+                                info!("failed to copy to clipboard");
+                            } else {
+                                info!("copied to clipboard: {:?}", line);
+                            }
+                        }
+                    }
+                        
+    
+                    (Key::Character(c), true, false, false) if &c.to_ascii_lowercase() == "c" => {
                         info!("copy pressed");
                         if let Some(selection) = file.get_selection() {
                             let mut clipboard = Clipboard::new().ok();
@@ -124,7 +150,7 @@ pub fn Editor(tabs: Signal<Tabs>) -> Element {
                         }
                     }
 
-                    (Key::Character(v), true, false) if &v.to_ascii_lowercase() == "v" => {
+                    (Key::Character(v), true, false, false) if &v.to_ascii_lowercase() == "v" => {
                         info!("paste pressed");
                         let mut clipboard = Clipboard::new().ok();
                         if let Some(clip) = clipboard.as_mut() {
@@ -134,9 +160,27 @@ pub fn Editor(tabs: Signal<Tabs>) -> Element {
                         }
                     }
 
-                    
+                    (Key::ArrowDown, false, false, true) => {
+                        info!("move line down pressed");
+                        file.move_line(true);
+                    }
 
-                    (_,_,_) => {}
+                    (Key::ArrowUp, false, false, true) => {
+                        info!("move line up pressed");
+                        file.move_line(false);
+                    }
+
+                    (Key::ArrowDown, false, true, true) => {
+                        info!("duplicate line down pressed");
+                        file.duplicate_line(true);
+                    }
+                    
+                    (Key::ArrowUp, false, true, true) => {
+                        info!("duplicate line up pressed");
+                        file.duplicate_line(false);
+                    }
+
+                    (_,_,_,_) => {}
                 }
 
             },
@@ -202,15 +246,17 @@ pub fn EditorLine(
     content: String,
     line_i: usize,
     caret_col: usize,
-    caret_line: usize,
+    caret_line: ReadOnlySignal<usize>,
     parent_element: Signal<Option<Rc<MountedData>>>,
 ) -> Element {
     
     let mut element: Signal<Option<Rc<MountedData>>> = use_signal(|| None);
 
     let _ = use_resource(move || async move {
-        if line_i == caret_line {
+        if line_i == caret_line() {
+            dbg!(element.read());
             if let Some(ref elem) = *element.read() {
+                dbg!(parent_element.read());
                 if let Some(ref parent_elem) = *parent_element.read() {
                     let scroll_offset = parent_elem.get_scroll_offset().await.unwrap();
                     let scroll_size = parent_elem.get_scroll_size().await.unwrap();
@@ -218,9 +264,9 @@ pub fn EditorLine(
 
                     let client_rect = elem.get_client_rect().await.unwrap();
 
-                    // dbg!(parent_rect.min_y(), parent_rect.max_y());
-                    // dbg!(client_rect.min_y(), scroll_offset.y);
-                    // dbg!(client_rect.max_y(), scroll_offset.y + scroll_size.height);
+                    dbg!(parent_rect.min_y(), parent_rect.max_y());
+                    dbg!(client_rect.min_y(), scroll_offset.y);
+                    dbg!(client_rect.max_y(), scroll_offset.y + scroll_size.height);
         
                     let height_underflown = client_rect.min_y() < parent_rect.min_y();
                     let height_overflown = client_rect.max_y() > parent_rect.max_y();
@@ -241,7 +287,7 @@ pub fn EditorLine(
                 element.set(Some(e.data()));
             },
 
-            style: match line_i == caret_line {
+            style: match line_i == caret_line() {
                 true => "display: flex; flex-direction: row; background-color: gray;",
                 false => "display: flex; flex-direction: row;"
             }.to_string() + "font-family: monospace; font-size: 16px; white-space: pre ",
@@ -260,7 +306,7 @@ pub fn EditorLine(
                     },
 
                     style:
-                        if i == caret_col && line_i == caret_line {
+                        if i == caret_col && line_i == caret_line() {
                             "; background-color: yellow;"
                         } else if let (Some(start), Some(end)) = (selection_start, selection_end) {
                             if (start.ln < line_i && line_i < end.ln ) || 
@@ -319,20 +365,29 @@ pub fn BottomStatusBar(
     caret_line: usize,
     char_idx: usize,
 ) -> Element {
+    let status = if let Some(ref f) = tabs.read().get_current_file() {
+        if let Some((start, end)) = f.selection {
+            let s = min(start, end);
+            let e = max(start, end);
+            let len = e - s;
+            let words = f.rope.slice(s..=e).chars().tuple_windows().filter(|(a, b)| a.is_whitespace() && !b.is_whitespace()).count() + 1;
+
+            format!("Selection: {len} chars, {words} words")
+        } else if let Some(x) = f.dirty_changes {
+            format!("{x} unsaved changes")
+        } else {
+            format!("(no changes)")
+        }
+    } else {
+        String::new()
+    };
+
     rsx! {
         div {
             style: "background-color: blue; height: 30px; display: flex; justify-content: flex-end; align-items: center;",
             span {
                 style: "margin-right: 10px;",
-                if let Some(ref f) = tabs.read().get_current_file() {
-                    if let Some(x) = f.dirty_changes {
-                        "{x} unsaved changes"
-                    } else {
-                        "(no changes)"
-                    }
-                } else {
-                    ""
-                }
+                "{status}"
             }
             
             div {
