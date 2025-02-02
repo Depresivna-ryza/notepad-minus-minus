@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use crate::models::file_system::{FileSystemItem, FileSystem};
 use crate::views::file_explorer::context_menu::{RightClickMenuHandler, RightClickMenu};
 use crate::models::tabs::Tabs;
-
+use dioxus_heroicons::{mini::Shape, Icon};
 
 #[component]
 pub fn File(file: PathBuf) -> Element {
@@ -22,7 +22,7 @@ pub fn File(file: PathBuf) -> Element {
             class: if state.read().is_focused(&file) {
                 "item-text-selected"
             } else {
-                "item-text"
+                "file-text"
             },
             
             ondoubleclick: move |_| {
@@ -41,8 +41,14 @@ pub fn File(file: PathBuf) -> Element {
                 right_click_menu_handler.handle_right_click(event);
                 state.write().change_focus(&file3);
             },
+
+            Icon {
+                icon: Shape::Document,
+            }
             
-            " {file_name}"
+            span {
+                " {file_name}"
+            }
         }
         
         if right_click_menu_handler.is_open() {
