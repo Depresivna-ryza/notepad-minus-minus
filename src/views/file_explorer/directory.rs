@@ -1,50 +1,52 @@
+use std::path::PathBuf;
 use dioxus::prelude::*;
-use crate::models::files::{Dir, DirectoryItem, DirectoryItems, FileSystem};
+use crate::models::file_system::{Directory, FileSystem, FileSystemItem};
 use crate::views::file_explorer::{
     file::File,
     context_menu::{RightClickMenu, RightClickMenuHandler},
 };
 
 #[component]
-pub fn Directory(dir: Dir) -> Element {
+pub fn DirectoryComponent(path: PathBuf) -> Element {
     let mut right_click_menu_handler = use_context_provider(|| RightClickMenuHandler::new());
-    let mut focus_state = use_context::<Signal<FileSystem>>();
+    let mut file_system = use_context::<Signal<FileSystem>>();
 
-    let dir_name = dir.path.file_name().unwrap().to_str().unwrap();
-
-    let opened_string = match dir.children {
-        DirectoryItems::OpenedDirectory(_) => "v",
-        DirectoryItems::ClosedDirectory => ">",
+    let opened_string = if file_system.read().directory_is_opened(&path) {
+        "v"
+    } else {
+        ">"
     };
 
-    let item_text_class = if focus_state.read().is_focused(&dir.path) {
+    let item_text_class = if file_system.read().is_focused(&path) {
         "item-text-selected"
     } else {
         "item-text"
     };
 
     let open_close = {
-        let path = dir.path.clone();
+        let mut file_system = file_system.clone();
+        let path = path.clone();
 
         move |_| {
-            focus_state.write().find(&path);
+            file_system.write().open_close_directory(&path);
         }
     };
 
     let change_focus = {
-        let path = dir.path.clone();
+        let mut file_system = file_system.clone();
+        let path = path.clone();
 
         move |_| {
-            focus_state.write().change_focus(&path);
+            file_system.write().change_focus(&path);
         }
     };
 
     let open_right_click_menu = {
-        let path = dir.path.clone();
+        let path = path.clone();
 
         move |event: MouseEvent| {
             right_click_menu_handler.handle_right_click(event);
-            focus_state.write().change_focus(&path);
+            file_system.write().change_focus(&path);
         }
     };
 
@@ -64,23 +66,23 @@ pub fn Directory(dir: Dir) -> Element {
                     onclick: change_focus,
                     oncontextmenu: open_right_click_menu,
 
-                    " {dir_name} "
+                    " { file_system.read().get_directory_name(&path) } "
                 }
             }
             
             if right_click_menu_handler.is_open() {
-                RightClickMenu { directory_item: DirectoryItem::Directory(dir.clone()) }
+                RightClickMenu { fs_item: FileSystemItem::Directory(Directory::from(&path.clone())) }
             }
             
-            if let DirectoryItems::OpenedDirectory(dir_items) = dir.children {
-                for item in dir_items.iter() {
-                    if let DirectoryItem::Directory(dir) = item {
-                        Directory { dir: dir.clone()}
+            if file_system.read().directory_is_opened(&path) {
+                for item in file_system.read().get_directory_children(&path).iter() {
+                    if let FileSystemItem::Directory(dir) = item {
+                        DirectoryComponent { path: dir.get_path().clone() }
                     }
                 }
 
-                for item in dir_items.iter() {
-                    if let DirectoryItem::File(file) = item {
+                for item in file_system.read().get_directory_children(&path).iter() {
+                    if let FileSystemItem::File(file) = item {
                         File { file: file.clone() }
                     }
                 }
