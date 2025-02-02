@@ -1,7 +1,9 @@
+use std::path::PathBuf;
+
 use dioxus::prelude::*;
-use crate::models::files::DirectoryItem;
+use crate::models::file_system::FileSystemItem;
 use crate::views::dialogs::fs_operations::{Operation, OperationDialogHandler};
-use crate::models::files::FileSystem;
+use crate::models::file_system::FileSystem;
 
 #[derive(Clone, Copy)]
 pub struct RightClickMenuHandler {
@@ -34,7 +36,7 @@ impl RightClickMenuHandler {
 }
 
 #[component]
-pub fn RightClickMenu(directory_item: DirectoryItem) -> Element {
+pub fn RightClickMenu(fs_item: FileSystemItem) -> Element {
     let mut right_click_menu_state = use_context::<RightClickMenuHandler>();
     let mut focus_state = use_context::<Signal<FileSystem>>();
     let operation_dialog_handler = use_context::<OperationDialogHandler>();
@@ -43,9 +45,9 @@ pub fn RightClickMenu(directory_item: DirectoryItem) -> Element {
 
     let menu_position = right_click_menu_state.position.read();
 
-    let path = match directory_item {
-        DirectoryItem::Directory(ref dir) => dir.path.clone(),
-        DirectoryItem::File(ref path_buf) => path_buf.clone(),
+    let path = match fs_item {
+        FileSystemItem::Directory(ref dir) => dir.get_path().clone(),
+        FileSystemItem::File(ref path_buf) => path_buf.clone(),
     };
 
     let create_directory = {
@@ -128,8 +130,8 @@ pub fn RightClickMenu(directory_item: DirectoryItem) -> Element {
             div {
                 onmousedown: move |_| button_pressed.set(true),
 
-                match directory_item {
-                    DirectoryItem::Directory(_) => rsx!(
+                match fs_item {
+                    FileSystemItem::Directory(_) => rsx!(
                         p { 
                             button { 
                                 class: "option-button",
@@ -152,7 +154,7 @@ pub fn RightClickMenu(directory_item: DirectoryItem) -> Element {
                             } 
                         }
                     ),
-                    DirectoryItem::File(_) => rsx!(
+                    FileSystemItem::File(_) => rsx!(
                         p {
                             button {
                                 class: "option-button",
