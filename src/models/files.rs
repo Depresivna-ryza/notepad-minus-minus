@@ -1,25 +1,57 @@
 use std::path::PathBuf;
-
 use itertools::Itertools;
 
 #[derive(PartialEq, Clone, Debug)]
+pub enum DirectoryItems {
+    ClosedDirectory,
+    OpenedDirectory(Vec<DirectoryItem>),
+}
+
+#[derive(PartialEq, Clone, Debug)]
+pub enum DirectoryItem {
+    File(PathBuf),
+    Directory(Dir),
+}
+
+#[derive(PartialEq, Clone, Debug)]
 pub struct FileSystem {
-    pub root: Option<Dir>,
+    root: Option<Dir>,
+    focus: Option<PathBuf>,
 }
 
 impl FileSystem {
     pub fn from(root: Dir) -> Self {
-        Self { root: Some(root) }
+        Self { root: Some(root), focus: None, }
     }
 
     pub fn new() -> Self {
-        Self { root: None }
+        Self { root: None, focus: None, }
     }
 
     pub fn find(&mut self, path: &PathBuf) {
         if let Some(ref mut root) = self.root {
             root.find(path);
         }
+    }
+    
+    pub fn change_focus(&mut self, path: &PathBuf) {
+        self.focus = Some(path.clone());
+    }
+    
+    pub fn clear_focus(&mut self) {
+        self.focus = None;
+    }
+    
+    pub fn is_focused(&self, path: &PathBuf) -> bool {
+        self.focus.as_ref() == Some(path)
+    }
+
+    pub fn get_root(&self) -> Option<&Dir> {
+        self.root.as_ref()
+    }
+
+    pub fn get_root_path(&self) -> Option<&PathBuf> {
+        self.root.as_ref().map(|root| &root.path)
     }
 }
 
@@ -42,6 +74,7 @@ impl Dir {
             self.open_close();
             return;
         }
+
         if let DirectoryItems::OpenedDirectory(ref mut items) = self.children {
             for item in items.iter_mut() {
                 match item {
@@ -84,19 +117,8 @@ impl Dir {
 
         self.children = DirectoryItems::OpenedDirectory(items);
     }
+    
     pub fn close(&mut self) {
         self.children = DirectoryItems::ClosedDirectory;
     }
-}
-
-#[derive(PartialEq, Clone, Debug)]
-pub enum DirectoryItems {
-    ClosedDirectory,
-    OpenedDirectory(Vec<DirectoryItem>),
-}
-
-#[derive(PartialEq, Clone, Debug)]
-pub enum DirectoryItem {
-    File(PathBuf),
-    Directory(Dir),
 }

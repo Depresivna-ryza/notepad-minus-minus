@@ -7,6 +7,7 @@ pub struct ShownPanels {
     pub search: Signal<bool>,
     pub file_tree: Signal<bool>,
     pub sessions: Signal<bool>,
+    pub history: Signal<bool>,
 }
 
 pub struct ReadOnlyShownPanels {
@@ -14,6 +15,7 @@ pub struct ReadOnlyShownPanels {
     pub search: ReadOnlySignal<bool>,
     pub file_tree: ReadOnlySignal<bool>,
     pub sessions: ReadOnlySignal<bool>,
+    pub history: ReadOnlySignal<bool>,
 }
 
 impl From<ShownPanels> for ReadOnlyShownPanels {
@@ -23,6 +25,7 @@ impl From<ShownPanels> for ReadOnlyShownPanels {
             search: panels.search.into(),
             file_tree: panels.file_tree.into(),
             sessions: panels.sessions.into(),
+            history: panels.history.into(),
         }
     }
 }
@@ -34,6 +37,7 @@ impl ShownPanels {
             search: use_signal(||true),
             file_tree: use_signal(||true),
             sessions: use_signal(||true),
+            history: use_signal(||true),
         }
     }
 }
