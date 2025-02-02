@@ -3,7 +3,7 @@ use std::{cmp::{max, min}, fs::read_to_string, path::PathBuf};
 use itertools::Itertools;
 
 use super::historyevent::HistoryEvent;
-use ropey::{iter::Lines, Rope};
+use ropey::Rope;
 
 
 #[derive(Debug, Clone, PartialEq, Copy)]
@@ -398,7 +398,7 @@ impl TextFile {
 
         self.apply_new_event(HistoryEvent::AddString(shifted_line, self.char_idx));
 
-        if (!go_down) {
+        if !go_down {
             self.char_idx -= end_idx - start_idx;
         }
     }
@@ -461,7 +461,7 @@ impl TextFile {
             return;
         };
 
-        let mut new_event : HistoryEvent;
+        let new_event : HistoryEvent;
 
         match(last.clone(), new.clone()) {
             (HistoryEvent::AddChar(c1, idx1), 
@@ -617,9 +617,9 @@ impl TextFile {
             }
 
             HistoryEvent::MoveLine(ln, go_down) => {
-                match (go_down) {
-                    (true) => self.apply_event(HistoryEvent::MoveLine(ln + 1, false)),
-                    (false) => self.apply_event(HistoryEvent::MoveLine(ln - 1, true)),
+                match go_down {
+                    true => self.apply_event(HistoryEvent::MoveLine(ln + 1, false)),
+                    false => self.apply_event(HistoryEvent::MoveLine(ln - 1, true)),
                 }
             }
         }

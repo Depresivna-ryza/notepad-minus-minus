@@ -32,6 +32,16 @@ pub fn SidePanel(shown_panels: ShownPanels) -> Element {
                 }
             },
             SidePanelIcon { 
+                title: "Sessions".to_string(), 
+                icon: Shape::User,
+                on_click: move || { 
+                    println!("Sessions clicked"); 
+                    let val = *shown_panels.sessions.read();
+                    shown_panels.sessions.set(!val);
+                    dbg!(shown_panels.sessions.peek());
+                }
+            },
+            SidePanelIcon { 
                 title: "Search".to_string(),
                 icon: Shape::MagnifyingGlass,
                 on_click: move || { 
@@ -39,6 +49,16 @@ pub fn SidePanel(shown_panels: ShownPanels) -> Element {
                     let val = *shown_panels.search.read();
                     shown_panels.search.set(!val);
                     dbg!(shown_panels.search.peek());
+                }
+            },
+            SidePanelIcon { 
+                title: "History".to_string(), 
+                icon: Shape::Clock,
+                on_click: move || { 
+                    println!("History clicked"); 
+                    let val = *shown_panels.history.read();
+                    shown_panels.history.set(!val);
+                    dbg!(shown_panels.history.peek());
                 }
             },
             SidePanelIcon { 
@@ -50,26 +70,6 @@ pub fn SidePanel(shown_panels: ShownPanels) -> Element {
                     shown_panels.terminal.set(!val);
                     println!("Terminal value: {}", shown_panels.terminal.peek());
                     dbg!(shown_panels.terminal.peek());
-                }
-            },
-            SidePanelIcon { 
-                title: "Sessions".to_string(), 
-                icon: Shape::User,
-                on_click: move || { 
-                    println!("Sessions clicked"); 
-                    let val = *shown_panels.sessions.read();
-                    shown_panels.sessions.set(!val);
-                    dbg!(shown_panels.sessions.peek());
-                }
-            },
-            SidePanelIcon { 
-                title: "History".to_string(), 
-                icon: Shape::Clock,
-                on_click: move || { 
-                    println!("History clicked"); 
-                    let val = *shown_panels.history.read();
-                    shown_panels.history.set(!val);
-                    dbg!(shown_panels.history.peek());
                 }
             },
         }
