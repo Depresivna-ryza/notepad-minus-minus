@@ -76,7 +76,7 @@ pub fn OperationDialog() -> Element {
 
 #[component]
 pub fn CreateRenameDialog() -> Element {
-    let mut operation_dialog_handler = use_context::<OperationDialogHandler>();
+    let operation_dialog_handler = use_context::<OperationDialogHandler>();
     let mut error_dialog_handler = use_context::<ErrorDialogHandler>();
     let mut file_system = use_context::<Signal<FileSystem>>();
 
@@ -98,6 +98,7 @@ pub fn CreateRenameDialog() -> Element {
 
     let on_submit = {
         let new_name = new_name.clone();
+        let mut operation_dialog_handler = operation_dialog_handler.clone();
 
         move |_| {
             let mut new_path = String::new();
@@ -162,6 +163,14 @@ pub fn CreateRenameDialog() -> Element {
             operation_dialog_handler.clear();
         }
     };
+    
+    let cancel = {
+        let mut operation_dialog_handler = operation_dialog_handler.clone();
+
+        move |_| {
+            operation_dialog_handler.clear();
+        }
+    };
 
     rsx! {
         div {
@@ -177,6 +186,11 @@ pub fn CreateRenameDialog() -> Element {
                 class: "submit-button",
                 onclick: on_submit,
                 "Submit"
+            }
+            button {
+                class: "cancel-button",
+                onclick: cancel,
+                "Cancel"
             }
         }
     }
