@@ -131,22 +131,24 @@ pub fn Layout() -> Element {
 pub fn LeftPanel(tabs: Signal<Tabs>, width: Signal<i32>, shown_panels: ShownPanels) -> Element {
     rsx! {
         div {
+            class: "custom-scrollbar",
+            overflow_y: "auto",
+            overflow_x: "hidden",
             display: "flex",
             flex_direction: "column",
-            flex: 1,
             width: width.read().to_string() + "px",
             div {
-                style: "display: flex; flex-direction: column; flex: 1; max-height: 100%; overflow: hidden",
+                style: "display: flex; flex-direction: column; flex: 1;  overflow: hidden; min-height: 250px",
                 display: if !*shown_panels.file_tree.read() {"none"} else {"flex"},
                 FileExplorer {tabs}
             }
             div {
-                style: "display: flex; flex-direction: column; flex: 1",
+                style: "display: flex;  flex: 1; min-height: 250px",
                 display: if !*shown_panels.sessions.read() {"none"} else {"flex"},
                 SessionsExplorer {}
             }
             div {
-                style: "display: flex; flex-direction: column; flex: 1; background-color: yellow",
+                style: "display: flex; flex-direction: column; flex: 1; background-color: yellow; min-height: 250px",
                 display: if !*shown_panels.search.read() {"none"} else {"flex"},
                 input {
                     style: "",
@@ -155,7 +157,7 @@ pub fn LeftPanel(tabs: Signal<Tabs>, width: Signal<i32>, shown_panels: ShownPane
                 }
             }
             div {
-                style: "display: flex; flex-direction: column; flex: 1; max-height: 100%; overflow: hidden",
+                style: "display: flex; flex-direction: column; flex: 1; max-height: 100%; overflow: hidden; min-height: 250px",
                 display: if !*shown_panels.history.read() {"none"} else {"flex"},
                 EditHistory {tabs}
             }

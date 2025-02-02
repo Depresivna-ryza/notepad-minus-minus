@@ -3,7 +3,7 @@ use std::{cmp::{max, min}, rc::Rc};
 use crate::models::{tabs::Tabs, text::{Caret, TextFile}};
 
 use arboard::Clipboard;
-use dioxus::{html::img::alt, prelude::*};
+use dioxus::prelude::*;
 use itertools::Itertools;
 use tracing::info;
 
