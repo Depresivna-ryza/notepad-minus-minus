@@ -60,13 +60,16 @@ pub fn OperationDialog() -> Element {
 
     rsx! {
         div {
-            class: "dialog",
+            class: "dialog-overlay",
+            div {
+                class: "dialog",
 
-            match operation_dialog_handler.get_operation() {
-                Some(Operation::CreateDirectory) | Some(Operation::CreateFile) | Some(Operation::Rename) => rsx!(CreateRenameDialog {}),
-                Some(Operation::DeleteDirectory) | Some(Operation::DeleteFile) => rsx!(DeleteDialog {}),
-                None => rsx!(),
-            },
+                match operation_dialog_handler.get_operation() {
+                    Some(Operation::CreateDirectory) | Some(Operation::CreateFile) | Some(Operation::Rename) => rsx!(CreateRenameDialog {}),
+                    Some(Operation::DeleteDirectory) | Some(Operation::DeleteFile) => rsx!(DeleteDialog {}),
+                    None => rsx!(),
+                },
+            }
         }
     }
 }
@@ -300,15 +303,18 @@ pub fn ErrorDialog() -> Element {
 
     rsx! {
         div {
-            class: "dialog",
+            class: "dialog-overlay",
             div {
-                class: "dialog-content",
-                p { "An error occurred." }
-                p { { error_dialog_handler.get_message() } }
-                button { 
-                    class: "cancel-button",
-                    onclick: close,
-                    "Close"
+                class: "dialog",
+                div {
+                    class: "dialog-content",
+                    p { "An error occurred." }
+                    p { { error_dialog_handler.get_message() } }
+                    button { 
+                        class: "cancel-button",
+                        onclick: close,
+                        "Close"
+                    }
                 }
             }
         }
