@@ -17,15 +17,49 @@ use tokio::{
 use crate::models::terminal_state::{TerminalData, TerminalStates};
 
 
-async fn launch_sh(shell: String) -> Arc<RwLock<Child>> {
-    Arc::new(RwLock::new(Command::new(shell)
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-        .expect("Failed to start sh")))
+async fn launch_sh(shell: String) -> Result<Arc<RwLock<Child>>, std::io::Error> {
+    Ok(Arc::new(RwLock::new(Command::new(shell)
+                .stdin(Stdio::piped())
+                .stdout(Stdio::piped())
+                .stderr(Stdio::piped())
+                .spawn()?)))
 }
 
+#[component]
+fn TerminalLauncher(terminal_states: Signal<TerminalStates>) -> Element {
+    let mut input_text: Signal<String> = use_signal(|| "".to_string());
+
+
+    let mut launch = move || {
+        let cmd = input_text.read().to_string();
+        terminal_states.write().push(TerminalData::new(cmd));
+        terminal_states.write().active_index = Some(terminal_states().len() - 1);
+    };
+
+    return rsx! {
+        div {
+            style: "display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; width: 100%;",
+            input {
+                style: "margin-top: 10px; padding: 10px; border: 1px solid #ccc; border-radius: 5px; width: 80%; max-width: 300px;",
+                oninput: move |e| *input_text.write() = e.value(),
+                value: input_text,
+                placeholder: "Enter command to launch terminal (cmd)",
+                onkeydown: move |event| {
+                    if event.key() == Key::Enter {
+                        launch();
+                    }
+                }
+            }
+            button {
+            style: "margin-top: 10px; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;",
+            background_color: HIGHLIGHT_COLOR,
+            color: DEFAULT_COLOR,
+            onclick: move |_| launch(),
+                "Launch terminal"
+            }
+        }
+    }
+}
 
 static ICON_SIZE: u32 = 20;
 static ICON_STYLE: &str = 
@@ -38,7 +72,6 @@ static DEFAULT_COLOR: &str = "#282c34";
 
 #[component]
 pub fn Terminal() -> Element {
-    let mut input_text: Signal<String> = use_signal(|| "".to_string());
     let mut terminal_states: Signal<TerminalStates> = use_signal(|| TerminalStates::default()); 
 
     rsx! {
@@ -64,101 +97,66 @@ pub fn Terminal() -> Element {
             }
 
             if terminal_states().active_index.clone().is_none() {
+                TerminalLauncher {
+                    terminal_states: terminal_states
+                }
+            }
+        }
+
+        div {
+            style: "display: flex; flex-direction: column; background-color: rgb(15, 16, 24); 
+                    border-left: solid rgb(50, 52, 87) 1px; padding: 10px; overflow-y: auto;",
+            for (index, terminal_state) in terminal_states().states.iter().enumerate() {
                 div {
-                    style: "display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; width: 100%;",
-                    input {
-                        style: "margin-top: 10px; padding: 10px; border: 1px solid #ccc; border-radius: 5px; width: 80%; max-width: 300px;",
-                        oninput: move |e| *input_text.write() = e.value(),
-                        value: input_text,
-                        placeholder: "Enter command to launch terminal (cmd)",
-                        onkeydown: move |event| {
-                            if event.key() == Key::Enter {
-                                let cmd = input_text.read().to_string();
-                                terminal_states.write().push(TerminalData::new(cmd));
-                                terminal_states.write().active_index = Some(terminal_states().len() - 1);
-                            }
+                    style: "display: flex; position: relative;",
+                    button {
+                        style: ICON_STYLE,
+                        title: terminal_state.command.clone(),
+                        background_color: if terminal_states().active_index.clone() == Some(index) {HIGHLIGHT_COLOR} else {DEFAULT_COLOR},
+                        color: "white",
+                        onclick: move |_| terminal_states.write().active_index = Some(index),
+                        Icon {
+                            icon: Shape::CommandLine,
+                            size: ICON_SIZE,
                         }
                     }
-                    button {
-                    style: "margin-top: 10px; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;",
-                    background_color: HIGHLIGHT_COLOR,
-                    color: DEFAULT_COLOR,
-                    onclick: move |_| {
-                            let cmd = input_text.read().to_string();
-                            terminal_states.write().push(TerminalData::new(cmd));
-                            terminal_states.write().active_index = Some(terminal_states().len() - 1);
+
+                    div {
+                        style: "position: absolute; top: 0; right: -6px; color: white;
+                                margin: 0;  border-radius: 50%; cursor: pointer; 
+                                width: 14px; height: 14px; display: flex; justify-content: center; align-items: center;",
+                        background_color: if terminal_states().active_index.clone() == Some(index ) {"rgb(97, 97, 97)"} else {"rgb(48, 48, 48)"},
+
+                        onclick: move |_| {
+                            let index = index.clone();
+                            terminal_states.write().remove(index);
                         },
-                        "Launch terminal"
+                        Icon {
+                            fill: if terminal_states().active_index.clone() == Some(index) {"white"} else {"grey"},
+                            icon: Shape::XMark,
+                        }
                     }
-                }
                 }
             }
 
-            div {
-                style: "display: flex; flex-direction: column; background-color: rgb(15, 16, 24); 
-                        border-left: solid rgb(50, 52, 87) 1px; padding: 10px; overflow-y: auto;",
-                for (index, terminal_state) in terminal_states().states.iter().enumerate() {
-                    div {
-                        style: "display: flex; position: relative;",
-                        button {
-                            style: ICON_STYLE,
-                            title: terminal_state.command.clone(),
-                            background_color: if terminal_states().active_index.clone() == Some(index) {HIGHLIGHT_COLOR} else {DEFAULT_COLOR},
-                            color: "white",
-                            onclick: move |_| terminal_states.write().active_index = Some(index),
-                            Icon {
-                                icon: Shape::CommandLine,
-                                size: ICON_SIZE,
-                            }
-                        }
-
-                        div {
-                            style: "position: absolute; top: 0; right: -6px; color: white;
-                                    margin: 0;  border-radius: 50%; cursor: pointer; 
-                                    width: 14px; height: 14px; display: flex; justify-content: center; align-items: center;",
-                            background_color: if terminal_states().active_index.clone() == Some(index ) {"rgb(97, 97, 97)"} else {"rgb(48, 48, 48)"},
-
-                            onclick: move |_| {
-                                let index = index.clone().to_owned();
-                                terminal_states.write().remove(index);
-                                if terminal_states().active_index.clone() == Some(index) {
-                                    terminal_states.write().active_index = None;
-                                }
-                                let Some(active_i) = terminal_states().active_index.clone() else {
-                                    return;
-                                };
-                                if active_i > index {
-                                    terminal_states.write().active_index = Some(active_i - 1); 
-                                } else if active_i == index && active_i == terminal_states().len() {
-                                    terminal_states.write().active_index = None;
-                                }
-                            },
-                            Icon {
-                                fill: if terminal_states().active_index.clone() == Some(index) {"white"} else {"grey"},
-                                icon: Shape::XMark,
-                            }
-                        }
-                    }
-                }
-
-                button {
-                    style: ICON_STYLE,
-                    title: "Launch terminal".to_string(),
-                    background_color: if terminal_states().active_index.clone().is_none() {HIGHLIGHT_COLOR} else {DEFAULT_COLOR},
-                    color: "#282c34",
-                    oncontextmenu: move |_| {
-                        terminal_states.write().push(TerminalData::new("cmd".to_string())); 
-                        terminal_states.write().active_index = Some(terminal_states().len() - 1);
-                    },
-                    onclick: move |_| terminal_states.write().active_index = None,
-                    Icon {
-                        icon: Shape::Plus,
-                        size: ICON_SIZE,
-                    }
+            button {
+                style: ICON_STYLE,
+                title: "Launch terminal".to_string(),
+                background_color: if terminal_states().active_index.clone().is_none() {HIGHLIGHT_COLOR} else {DEFAULT_COLOR},
+                color: "#282c34",
+                oncontextmenu: move |_| {
+                    terminal_states.write().push(TerminalData::new("cmd".to_string())); 
+                    terminal_states.write().active_index = Some(terminal_states().len() - 1);
+                },
+                onclick: move |_| terminal_states.write().active_index = None,
+                Icon {
+                    icon: Shape::Plus,
+                    size: ICON_SIZE,
                 }
             }
         }
     }
+}
 }
 
 
@@ -196,6 +194,20 @@ fn ConcreteTerminal(terminal_states: Signal<TerminalStates>, index: usize) -> El
         };
     };
 
+    let Ok(sh1) = sh1 else {
+        return rsx! {
+            div {
+                onmounted: move |_| async move { sleep(Duration::from_secs(5)).await; terminal_states.write().remove(index); },
+                style: "display: flex; justify-content: center; align-items: center; height: 100%; width: 100%",
+                div {
+                    style: "padding: 10px; border-radius: 3px; background-color: white; color: black; font-size: 15px; font-weight: 500; 
+                        text-align: center;",
+                    "Failed to launch terminal with command: \"{terminal_states().states[index].command.clone()}\""
+                }
+            }
+        };
+    };
+
     let mut commands: Signal<String> = use_signal(|| "".to_string());
 
     let write_rc = Arc::clone(sh1);
@@ -223,7 +235,7 @@ fn ConcreteTerminal(terminal_states: Signal<TerminalStates>, index: usize) -> El
         let sh = Arc::clone(&read_rc); 
         async move {
             loop {
-                sleep(Duration::from_millis(10)).await;
+                sleep(Duration::from_millis(1)).await;
                 let mut sh = sh.write().await;
                 let stdout = sh.stdout.as_mut().expect("Failed to get stdout");
                 let mut outBuf = BufReader::new(stdout);
