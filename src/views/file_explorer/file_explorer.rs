@@ -10,9 +10,10 @@ use crate::views::file_explorer::dialogs::{OperationDialogHandler, OperationDial
 #[component]
 pub fn FileExplorer(tabs: Signal<Tabs>) -> Element {
     use_context_provider(|| tabs);
-    let mut file_system = use_context_provider(|| Signal::new(FileSystem::new()));
     let operation_dialog_handler = use_context_provider(|| OperationDialogHandler::new());
     let error_dialog_handler = use_context_provider(|| ErrorDialogHandler::new());
+
+    let mut file_system = use_context_provider(|| Signal::new(FileSystem::new()));
 
     let change_root_directory = move |_| async move {
         if let Some(dir_path) = AsyncFileDialog::new().pick_folder().await {
