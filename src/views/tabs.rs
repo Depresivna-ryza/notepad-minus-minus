@@ -57,12 +57,12 @@ pub fn TabView(file: ReadOnlySignal<Tab>, tabs: Signal<Tabs>) -> Element {
                 false => "color: red; font-weight: bold; font-style: italic; text-decoration: line-through; text-decoration-style: wavy",
             },
 
+            onclick: move |_| {
+                tabs.write().set_current_file(file().file.path);
+                info!("current file changed to: {:?}", file().file.path);
+            },
 
             a {
-                onclick: move |_| {
-                    tabs.write().set_current_file(file().file.path);
-                    info!("current file changed to: {:?}", file().file.path);
-                },
                 "{file_name_short}"
             }
 
