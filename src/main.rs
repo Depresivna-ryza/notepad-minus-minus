@@ -1,11 +1,8 @@
 pub mod models;
 pub mod views;
 
-use std::ops::{Deref, Not};
 use std::rc::Rc;
 use dioxus::desktop::window;
-use models::files::FileSystem;
-use dotenvy::dotenv;
 use models::panels::ShownPanels;
 use models::tabs::Tabs;
 use views::editor::Editor;
@@ -13,7 +10,6 @@ use views::file_explorer::file_explorer::FileExplorer;
 use views::sessionexplorer::SessionsExplorer;
 use views::side_panel::SidePanel;
 use views::tabs::EditorTabs;
-use views::dialogs::{Operation, OperationDialogHandler, NewDirectoryDialog, NewFileDialog, DeleteDirectoryDialog, DeleteFileDialog, RenameDialog};
 
 use dioxus::prelude::*;
 use views::terminal::Terminal;
