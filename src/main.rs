@@ -15,7 +15,6 @@ use views::tabs::EditorTabs;
 
 use dioxus::prelude::*;
 use views::terminal::Terminal;
-use tracing::info;
 
 const FAVICON: Asset = asset!("/assets/favicon.ico");
 const MAIN_CSS: Asset = asset!("/assets/main.css");
