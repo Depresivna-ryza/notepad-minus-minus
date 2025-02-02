@@ -1,11 +1,11 @@
 use dioxus::prelude::*;
 use rfd::AsyncFileDialog;
-use crate::views::file_explorer::directory::Directory;
-use crate::models::{
-    files::{Dir, FileSystem},
-    tabs::Tabs,
-};
+use crate::views::file_explorer::directory::DirectoryComponent;
+use crate::models::tabs::Tabs;
 use crate::views::dialogs::fs_operations::{OperationDialogHandler, OperationDialog};
+use crate::models::file_system::FileSystem;
+
+use std::time::Duration as duration;
 
 #[component]
 pub fn FileExplorer(tabs: Signal<Tabs>) -> Element {
@@ -16,11 +16,16 @@ pub fn FileExplorer(tabs: Signal<Tabs>) -> Element {
 
     let change_root_directory = move |_| async move {
         if let Some(dir_path) = AsyncFileDialog::new().pick_folder().await {
-            let mut root_dir = Dir::new(dir_path.path().to_path_buf());
-            root_dir.open();
-            file_system.replace(FileSystem::from(root_dir));
+            file_system.replace(FileSystem::from(dir_path.path()));
         }
     };
+
+    use_future(move || async move {
+        loop {
+            tokio::time::sleep(duration::from_secs(1)).await;
+            file_system.write().reload();
+        }
+    });
 
     rsx! {
         div {
@@ -33,8 +38,8 @@ pub fn FileExplorer(tabs: Signal<Tabs>) -> Element {
                 "Change root directory"
             }
 
-            if let Some(dir) = file_system.read().get_root() {
-                Directory { dir: dir.clone() }
+            if let Some(directory) = file_system.read().get_root() {
+                DirectoryComponent { path: directory.get_path().clone() }
             } else {
                 div {
                     "No directory selected"
