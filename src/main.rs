@@ -1,24 +1,21 @@
 pub mod models;
 pub mod views;
 
-use std::ops::{Deref, Not};
 use std::rc::Rc;
-
 use dioxus::desktop::window;
-use dotenvy::dotenv;
 use models::panels::ShownPanels;
 use models::tabs::Tabs;
 use tracing::info;
 use views::edit_history::EditHistory;
 use views::editor::Editor;
-use views::fileexplorer::FileExplorer;
+use views::file_explorer::file_explorer::FileExplorer;
 use views::sessionexplorer::SessionsExplorer;
 use views::side_panel::SidePanel;
 use views::tabs::EditorTabs;
 
 use dioxus::prelude::*;
 use views::terminal::Terminal;
-
+use tracing::info;
 
 const FAVICON: Asset = asset!("/assets/favicon.ico");
 const MAIN_CSS: Asset = asset!("/assets/main.css");
@@ -32,7 +29,7 @@ fn main() {
 pub fn Layout() -> Element {
     let tabs = use_signal(Tabs::new);
     let shown_panels = ShownPanels::new();
-
+    
     let mut terminal_height = use_signal(|| 200);
     let mut left_panel_width = use_signal(|| 100);
 
@@ -44,7 +41,7 @@ pub fn Layout() -> Element {
     let handleMouseMovement = move |event: MouseEvent| async move {
         if *is_terminal_slider_pressed.read() {
             let mouse_height = event.page_coordinates().y as i32;
-    
+
             let new_height = window().inner_size().height as i32 - mouse_height;
             if (new_height) < 69 {
                 info!("Terminal too small");
@@ -92,8 +89,8 @@ pub fn Layout() -> Element {
                     style: "display: flex; flex-direction: row; flex: 1; overflow: hidden;",
                     div {
                         style: "display: flex; flex-direction: row; overflow: hidden;",
-                        display: if 
-                            !*shown_panels.search.read() && 
+                        display: if
+                            !*shown_panels.search.read() &&
                             !*shown_panels.file_tree.read() &&
                             !*shown_panels.sessions.read() &&
                             !*shown_panels.history.read() {"none"} else {"flex"},
@@ -105,18 +102,17 @@ pub fn Layout() -> Element {
                         div {
                             onmousedown: move |_| is_left_panel_slider_pressed.set(true),
                             style: "border-right: 3px solid red; cursor: ew-resize",
-                        } 
+                        }
                     }
                     RightPanel {tabs}
                 }
-
 
                 div {
                     hidden: !*shown_panels.terminal.read(),
                     div {
                         onmousedown: move |_| is_terminal_slider_pressed.set(true),
                         style: "border-top: 3px solid red; cursor: ns-resize",
-                    } 
+                    }
                     Terminal {
                         terminal_height: terminal_height
                     }
