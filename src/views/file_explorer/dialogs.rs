@@ -1,9 +1,6 @@
 use std::path::PathBuf;
 use std::fs;
-use async_std::path::Path;
-use dioxus::html::g::format;
 use dioxus::prelude::*;
-use tracing::info;
 
 use crate::models::files::{Dir, FileSystem};
 
@@ -119,21 +116,21 @@ pub fn CreateRenameDialog() -> Element {
 
             match operation_dialog_handler.get_operation() {
                 Some(Operation::CreateDirectory) => {
-                    new_path = format!("{}/{}", path.to_str().expect(""), new_name.read().as_str());
+                    new_path = format!("{}/{}", path.to_str().expect("Path is empty"), new_name.read().as_str());
 
                     if let Err(error) = fs::create_dir(&new_path) {
                         error_dialog_handler.show(error.to_string());
                     }
                 },
                 Some(Operation::CreateFile) => {
-                    new_path = format!("{}/{}", path.to_str().expect(""), new_name.read().as_str());
+                    new_path = format!("{}/{}", path.to_str().expect("Path is empty"), new_name.read().as_str());
 
                     if let Err(error) = fs::File::create(&new_path) {
                         error_dialog_handler.show(error.to_string());
                     }
                 },
                 Some(Operation::Rename) => {
-                    new_path = format!("{}/{}", path.parent().expect("").to_str().expect(""), new_name.read().as_str());
+                    new_path = format!("{}/{}", path.parent().expect("Parent path is empty").to_str().expect("Path is empty"), new_name.read().as_str());
 
                     if let Err(error) = fs::rename(path.to_str().expect(""), &new_path) {
                         error_dialog_handler.show(error.to_string());
@@ -144,7 +141,7 @@ pub fn CreateRenameDialog() -> Element {
             }
 
             // Refresh the file system if the root directory is being renamed
-            if matches!(operation_dialog_handler.get_operation(), Some(Operation::Rename)) && file_system.read().root.as_ref().map_or(false, |root| path == root.path) {
+            if matches!(operation_dialog_handler.get_operation(), Some(Operation::Rename)) && file_system.read().get_root_path().map_or(false, |root_path| path == *root_path) {
                 file_system.replace(FileSystem::from(Dir::new(PathBuf::from(&new_path))));
                 operation_dialog_handler.clear();
                 return;
@@ -216,7 +213,7 @@ pub fn DeleteDialog() -> Element {
             }
             
             // Refresh the file system if the root directory is being deleted
-            if file_system.read().root.as_ref().map_or(false, |root| path == root.path) {
+            if file_system.read().get_root_path().map_or(false, |root_path| path == *root_path) {
                 file_system.replace(FileSystem::new());
                 operation_dialog_handler.clear();
                 return;

@@ -1,7 +1,6 @@
 use std::path::PathBuf;
 use itertools::Itertools;
 
-
 #[derive(PartialEq, Clone, Debug)]
 pub enum DirectoryItems {
     ClosedDirectory,
@@ -16,7 +15,7 @@ pub enum DirectoryItem {
 
 #[derive(PartialEq, Clone, Debug)]
 pub struct FileSystem {
-    pub root: Option<Dir>,
+    root: Option<Dir>,
     focus: Option<PathBuf>,
 }
 
@@ -46,6 +45,14 @@ impl FileSystem {
     pub fn is_focused(&self, path: &PathBuf) -> bool {
         self.focus.as_ref() == Some(path)
     }
+
+    pub fn get_root(&self) -> Option<&Dir> {
+        self.root.as_ref()
+    }
+
+    pub fn get_root_path(&self) -> Option<&PathBuf> {
+        self.root.as_ref().map(|root| &root.path)
+    }
 }
 
 #[derive(PartialEq, Clone, Debug)]
@@ -67,6 +74,7 @@ impl Dir {
             self.open_close();
             return;
         }
+
         if let DirectoryItems::OpenedDirectory(ref mut items) = self.children {
             for item in items.iter_mut() {
                 match item {
@@ -109,6 +117,7 @@ impl Dir {
 
         self.children = DirectoryItems::OpenedDirectory(items);
     }
+    
     pub fn close(&mut self) {
         self.children = DirectoryItems::ClosedDirectory;
     }

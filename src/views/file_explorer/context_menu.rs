@@ -1,23 +1,17 @@
-use dioxus::html::button;
 use dioxus::prelude::*;
-use tracing::info;
-
 use crate::models::files::DirectoryItem;
 use crate::views::file_explorer::dialogs::{Operation, OperationDialogHandler};
 use crate::models::files::FileSystem;
 
-use std::time::Duration;
-use settimeout::set_timeout;
-
 #[derive(Clone, Copy)]
-pub struct RightClickMenuState {
+pub struct RightClickMenuHandler {
     is_open: Signal<bool>,
     position: Signal<(f64, f64)>,
 }
 
-impl RightClickMenuState {
+impl RightClickMenuHandler {
     pub fn new() -> Self {
-        RightClickMenuState {
+        RightClickMenuHandler {
             is_open: Signal::new(false),
             position: Signal::new((0.0, 0.0)),
         }
@@ -41,13 +35,13 @@ impl RightClickMenuState {
 
 #[component]
 pub fn RightClickMenu(directory_item: DirectoryItem) -> Element {
-    let mut right_click_menu_state = use_context::<RightClickMenuState>();
+    let mut right_click_menu_state = use_context::<RightClickMenuHandler>();
     let mut focus_state = use_context::<Signal<FileSystem>>();
-    let mut operation_dialog_handler = use_context::<OperationDialogHandler>();
-
-    let menu_position = right_click_menu_state.position.read();
+    let operation_dialog_handler = use_context::<OperationDialogHandler>();
 
     let mut button_pressed = use_signal(|| false);
+
+    let menu_position = right_click_menu_state.position.read();
 
     let path = match directory_item {
         DirectoryItem::Directory(ref dir) => dir.path.clone(),
@@ -111,19 +105,17 @@ pub fn RightClickMenu(directory_item: DirectoryItem) -> Element {
 
     rsx!(
         div {
-            onmounted: move |e| {
-                e.data().as_ref().set_focus(true);
-            },
-            
             class: "right-click-menu",
-
+            tabindex: 0,
             style: "
                 top: {menu_position.1}px;
                 left: {menu_position.0}px;
             ",
-
-            tabindex: 0,
             
+            onmounted: move |e| {
+                e.data().as_ref().set_focus(true);
+            },
+
             onfocusout: move |_| {
                 if *button_pressed.read() {
                     button_pressed.set(false);

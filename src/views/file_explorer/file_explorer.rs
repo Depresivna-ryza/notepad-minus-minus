@@ -1,5 +1,5 @@
 use dioxus::prelude::*;
-use rfd::{AsyncFileDialog, FileDialog};
+use rfd::AsyncFileDialog;
 use crate::views::file_explorer::directory::Directory;
 use crate::models::{
     files::{Dir, FileSystem},
@@ -34,8 +34,8 @@ pub fn FileExplorer(tabs: Signal<Tabs>) -> Element {
                 "Change root directory"
             }
 
-            if let Some(dir) = file_system.read().root.clone() {
-                Directory { dir }
+            if let Some(dir) = file_system.read().get_root() {
+                Directory { dir: dir.clone() }
             } else {
                 div {
                     "No directory selected"
@@ -50,6 +50,5 @@ pub fn FileExplorer(tabs: Signal<Tabs>) -> Element {
         if error_dialog_handler.is_shown() {
             ErrorDialog {}
         }
-
     }
 }
