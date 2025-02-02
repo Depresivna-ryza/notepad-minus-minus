@@ -5,13 +5,12 @@ use crate::models::{
     files::{Dir, FileSystem},
     tabs::Tabs,
 };
-use crate::views::file_explorer::dialogs::{OperationDialogHandler, OperationDialog, ErrorDialogHandler, ErrorDialog};
+use crate::views::dialogs::fs_operations::{OperationDialogHandler, OperationDialog};
 
 #[component]
 pub fn FileExplorer(tabs: Signal<Tabs>) -> Element {
     use_context_provider(|| tabs);
     let operation_dialog_handler = use_context_provider(|| OperationDialogHandler::new());
-    let error_dialog_handler = use_context_provider(|| ErrorDialogHandler::new());
 
     let mut file_system = use_context_provider(|| Signal::new(FileSystem::new()));
 
@@ -45,10 +44,6 @@ pub fn FileExplorer(tabs: Signal<Tabs>) -> Element {
 
         if operation_dialog_handler.is_operation_set() {
             OperationDialog {}
-        }
-
-        if error_dialog_handler.is_shown() {
-            ErrorDialog {}
         }
     }
 }

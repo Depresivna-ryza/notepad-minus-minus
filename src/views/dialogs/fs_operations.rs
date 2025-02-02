@@ -2,7 +2,7 @@ use std::path::PathBuf;
 use std::fs;
 use dioxus::prelude::*;
 
-use crate::models::files::{Dir, FileSystem};
+use crate::{models::files::{Dir, FileSystem}, views::dialogs::error::ErrorDialogHandler};
 
 #[derive(Clone)]
 pub enum Operation {
@@ -60,20 +60,23 @@ pub fn OperationDialog() -> Element {
 
     rsx! {
         div {
-            class: "dialog",
+            class: "dialog-overlay",
+            div {
+                class: "dialog",
 
-            match operation_dialog_handler.get_operation() {
-                Some(Operation::CreateDirectory) | Some(Operation::CreateFile) | Some(Operation::Rename) => rsx!(CreateRenameDialog {}),
-                Some(Operation::DeleteDirectory) | Some(Operation::DeleteFile) => rsx!(DeleteDialog {}),
-                None => rsx!(),
-            },
+                match operation_dialog_handler.get_operation() {
+                    Some(Operation::CreateDirectory) | Some(Operation::CreateFile) | Some(Operation::Rename) => rsx!(CreateRenameDialog {}),
+                    Some(Operation::DeleteDirectory) | Some(Operation::DeleteFile) => rsx!(DeleteDialog {}),
+                    None => rsx!(),
+                },
+            }
         }
     }
 }
 
 #[component]
-pub fn CreateRenameDialog() -> Element {
-    let mut operation_dialog_handler = use_context::<OperationDialogHandler>();
+fn CreateRenameDialog() -> Element {
+    let operation_dialog_handler = use_context::<OperationDialogHandler>();
     let mut error_dialog_handler = use_context::<ErrorDialogHandler>();
     let mut file_system = use_context::<Signal<FileSystem>>();
 
@@ -95,6 +98,7 @@ pub fn CreateRenameDialog() -> Element {
 
     let on_submit = {
         let new_name = new_name.clone();
+        let mut operation_dialog_handler = operation_dialog_handler.clone();
 
         move |_| {
             let mut new_path = String::new();
@@ -159,6 +163,14 @@ pub fn CreateRenameDialog() -> Element {
             operation_dialog_handler.clear();
         }
     };
+    
+    let cancel = {
+        let mut operation_dialog_handler = operation_dialog_handler.clone();
+
+        move |_| {
+            operation_dialog_handler.clear();
+        }
+    };
 
     rsx! {
         div {
@@ -175,12 +187,17 @@ pub fn CreateRenameDialog() -> Element {
                 onclick: on_submit,
                 "Submit"
             }
+            button {
+                class: "cancel-button",
+                onclick: cancel,
+                "Cancel"
+            }
         }
     }
 }
 
 #[component]
-pub fn DeleteDialog() -> Element {
+fn DeleteDialog() -> Element {
     let operation_dialog_handler = use_context::<OperationDialogHandler>();
     let mut error_dialog_handler = use_context::<ErrorDialogHandler>();
     let mut file_system = use_context::<Signal<FileSystem>>();
@@ -249,67 +266,6 @@ pub fn DeleteDialog() -> Element {
                 class: "cancel-button",
                 onclick: cancel,
                 "Cancel"
-            }
-        }
-    }
-}
-
-
-#[derive(Clone)]
-pub struct ErrorDialogHandler {
-    show: Signal<bool>,
-    message: Signal<Option<String>>,
-}
-
-impl ErrorDialogHandler {
-    pub fn new() -> Self {
-        Self {
-            show: Signal::new(false),
-            message: Signal::new(None),
-        }
-    }
-
-    pub fn show(&mut self, message: String) {
-        self.message.set(Some(message));
-        self.show.set(true);
-    }
-
-    pub fn get_message(&self) -> String {
-        self.message.read().clone().unwrap_or_else(|| String::new())
-    }
-
-    pub fn is_shown(&self) -> bool {
-        *self.show.read()
-    }
-
-    pub fn hide(&mut self) {
-        self.show.set(false);
-    }
-}
-
-#[component]
-pub fn ErrorDialog() -> Element {
-    let error_dialog_handler = use_context::<ErrorDialogHandler>();
-
-    let close = {
-        let mut error_dialog_handler = error_dialog_handler.clone();
-        move |_| {
-            error_dialog_handler.hide();
-        }
-    };
-
-    rsx! {
-        div {
-            class: "dialog",
-            div {
-                class: "dialog-content",
-                p { "An error occurred." }
-                p { { error_dialog_handler.get_message() } }
-                button { 
-                    class: "cancel-button",
-                    onclick: close,
-                    "Close"
-                }
             }
         }
     }

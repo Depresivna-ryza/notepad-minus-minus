@@ -1,6 +1,6 @@
 use dioxus::prelude::*;
 use crate::models::files::DirectoryItem;
-use crate::views::file_explorer::dialogs::{Operation, OperationDialogHandler};
+use crate::views::dialogs::fs_operations::{Operation, OperationDialogHandler};
 use crate::models::files::FileSystem;
 
 #[derive(Clone, Copy)]
