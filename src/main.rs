@@ -13,6 +13,8 @@ use views::sessionexplorer::SessionsExplorer;
 use views::side_panel::SidePanel;
 use views::tabs::EditorTabs;
 
+use crate::views::dialogs::error::{ErrorDialogHandler, ErrorDialog};
+
 use dioxus::prelude::*;
 use views::terminal::Terminal;
 
@@ -26,6 +28,8 @@ fn main() {
 
 #[component]
 pub fn Layout() -> Element {
+    let error_dialog_handler = use_context_provider(|| ErrorDialogHandler::new());
+
     let tabs = use_signal(Tabs::new);
     let shown_panels = ShownPanels::new();
     
@@ -118,7 +122,9 @@ pub fn Layout() -> Element {
                 }
             }
         }
-
+        if error_dialog_handler.is_shown() {
+            ErrorDialog {}
+        }
     }
 }
 
