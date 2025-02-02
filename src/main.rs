@@ -6,7 +6,7 @@ use dioxus::desktop::window;
 use models::panels::ShownPanels;
 use models::tabs::Tabs;
 use tracing::info;
-use views::edit_history::EditHistory;
+use views::{edit_history::EditHistory, find_replace::FindReplace};
 use views::editor::Editor;
 use views::file_explorer::file_explorer::FileExplorer;
 use views::sessionexplorer::SessionsExplorer;
@@ -150,11 +150,7 @@ pub fn LeftPanel(tabs: Signal<Tabs>, width: Signal<i32>, shown_panels: ShownPane
             div {
                 style: "display: flex; flex-direction: column; flex: 1; background-color: yellow; min-height: 250px",
                 display: if !*shown_panels.search.read() {"none"} else {"flex"},
-                input {
-                    style: "",
-                    type: "text",
-                    placeholder: "Search",
-                }
+                FindReplace{ tabs }
             }
             div {
                 style: "display: flex; flex-direction: column; flex: 1; max-height: 100%; overflow: hidden; min-height: 250px",
