@@ -1,9 +1,20 @@
-use std::{env, ops::{Deref, Not}, process::Stdio, rc::Rc, sync::Arc, time::Duration, vec};
-use dioxus::{desktop::{tao::event, window}, html::{canvas::height, g::direction, geometry::euclid::Rect, mo}, prelude::*};
-use tokio::{io::{AsyncBufReadExt, AsyncWriteExt, BufReader}, process::{Child, Command}, sync::RwLock, time::{sleep, timeout}};
-use tracing::info;
+use dioxus::prelude::*;
+use dioxus_heroicons::{mini::Shape, Icon};
 
-use crate::views::terminal;
+use std::{
+    process::Stdio,
+    sync::Arc,
+    time::Duration,
+    vec,
+};
+use tokio::{
+    io::{AsyncBufReadExt, AsyncWriteExt, BufReader},
+    process::{Child, Command},
+    sync::RwLock,
+    time::{sleep, timeout},
+};
+
+use crate::models::terminal_state::{TerminalData, TerminalStates};
 
 
 async fn launch_sh(shell: String) -> Arc<RwLock<Child>> {
@@ -15,118 +26,250 @@ async fn launch_sh(shell: String) -> Arc<RwLock<Child>> {
         .expect("Failed to start sh")))
 }
 
-#[component]
-pub fn Terminal(terminal_height: Signal<i32>) -> Element {
-    let future = use_resource(|| async move {
-        let shell = env::var("SHELL")
-            .unwrap_or_else(|_| {
-                dbg!("No SHELL env var found, using cmd");
-                "cmd".to_string()
-            });
 
-        sleep(Duration::from_secs(3)).await;
-        launch_sh(shell).await
-    });
+static ICON_SIZE: u32 = 20;
+static ICON_STYLE: &str = 
+    "margin: 5px 0; padding: 10px; border: none; 
+    border-radius: 3px; cursor: pointer; display: flex; align-items: center; 
+    justify-content: center; height: 25px; width: 40px";
+
+static HIGHLIGHT_COLOR: &str = "#61dafb";
+static DEFAULT_COLOR: &str = "#282c34";
+
+#[component]
+pub fn Terminal() -> Element {
+    let mut input_text: Signal<String> = use_signal(|| "".to_string());
+    let mut terminal_states: Signal<TerminalStates> = use_signal(|| TerminalStates::default()); 
 
     rsx! {
         div {
+        style: "display: flex; height: 100%;",
+
+        div {
             tabindex: 0,
-            height: terminal_height.read().to_string() + "px",
-            style: "background-color: black; color: white",
-            TerminalText {future}
+            style: "background-color: black; color: white; height: 100%;  display: flex; flex-direction: row; flex: 1",
+            for (index, _) in terminal_states().states.iter().enumerate() {
+                div {
+                    style: "display: flex; flex: 1;",
+                    display: if terminal_states().active_index.clone() == Some(index) {
+                            "flex"
+                        } else {
+                            "none"
+                        },
+                    ConcreteTerminal {
+                        terminal_states: terminal_states,
+                        index
+                    }
+                }
+            }
+
+            if terminal_states().active_index.clone().is_none() {
+                div {
+                    style: "display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; width: 100%;",
+                    input {
+                        style: "margin-top: 10px; padding: 10px; border: 1px solid #ccc; border-radius: 5px; width: 80%; max-width: 300px;",
+                        oninput: move |e| *input_text.write() = e.value(),
+                        value: input_text,
+                        placeholder: "Enter command to launch terminal (cmd)",
+                        onkeydown: move |event| {
+                            if event.key() == Key::Enter {
+                                let cmd = input_text.read().to_string();
+                                terminal_states.write().push(TerminalData::new(cmd));
+                                terminal_states.write().active_index = Some(terminal_states().len() - 1);
+                            }
+                        }
+                    }
+                    button {
+                    style: "margin-top: 10px; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;",
+                    background_color: HIGHLIGHT_COLOR,
+                    color: DEFAULT_COLOR,
+                    onclick: move |_| {
+                            let cmd = input_text.read().to_string();
+                            terminal_states.write().push(TerminalData::new(cmd));
+                            terminal_states.write().active_index = Some(terminal_states().len() - 1);
+                        },
+                        "Launch terminal"
+                    }
+                }
+                }
+            }
+
+            div {
+                style: "display: flex; flex-direction: column; background-color: rgb(15, 16, 24); 
+                        border-left: solid rgb(50, 52, 87) 1px; padding: 10px; overflow-y: auto;",
+                for (index, terminal_state) in terminal_states().states.iter().enumerate() {
+                    div {
+                        style: "display: flex; position: relative;",
+                        button {
+                            style: ICON_STYLE,
+                            title: terminal_state.command.clone(),
+                            background_color: if terminal_states().active_index.clone() == Some(index) {HIGHLIGHT_COLOR} else {DEFAULT_COLOR},
+                            color: "white",
+                            onclick: move |_| terminal_states.write().active_index = Some(index),
+                            Icon {
+                                icon: Shape::CommandLine,
+                                size: ICON_SIZE,
+                            }
+                        }
+
+                        div {
+                            style: "position: absolute; top: 0; right: -6px; color: white;
+                                    margin: 0;  border-radius: 50%; cursor: pointer; 
+                                    width: 14px; height: 14px; display: flex; justify-content: center; align-items: center;",
+                            background_color: if terminal_states().active_index.clone() == Some(index ) {"rgb(97, 97, 97)"} else {"rgb(48, 48, 48)"},
+
+                            onclick: move |_| {
+                                let index = index.clone().to_owned();
+                                terminal_states.write().remove(index);
+                                if terminal_states().active_index.clone() == Some(index) {
+                                    terminal_states.write().active_index = None;
+                                }
+                                let Some(active_i) = terminal_states().active_index.clone() else {
+                                    return;
+                                };
+                                if active_i > index {
+                                    terminal_states.write().active_index = Some(active_i - 1); 
+                                } else if active_i == index && active_i == terminal_states().len() {
+                                    terminal_states.write().active_index = None;
+                                }
+                            },
+                            Icon {
+                                fill: if terminal_states().active_index.clone() == Some(index) {"white"} else {"grey"},
+                                icon: Shape::XMark,
+                            }
+                        }
+                    }
+                }
+
+                button {
+                    style: ICON_STYLE,
+                    title: "Launch terminal".to_string(),
+                    background_color: if terminal_states().active_index.clone().is_none() {HIGHLIGHT_COLOR} else {DEFAULT_COLOR},
+                    color: "#282c34",
+                    oncontextmenu: move |_| {
+                        terminal_states.write().push(TerminalData::new("cmd".to_string())); 
+                        terminal_states.write().active_index = Some(terminal_states().len() - 1);
+                    },
+                    onclick: move |_| terminal_states.write().active_index = None,
+                    Icon {
+                        icon: Shape::Plus,
+                        size: ICON_SIZE,
+                    }
+                }
+            }
         }
     }
 }
+
+
+static TERMINAL_STYLE: &str = 
+    "background-color: rgb(6, 7, 17); color: white; 
+    width: 100% ; flex: 1; overflow-y: scroll;
+    margin: 0; padding: 0; border: 0; cursor: text; scroll-behavior: smooth";
+
 
 #[component]
 fn TerminalLoading() -> Element {
     rsx! {
         pre {
-            style: "background-color: white; color: black;",
+            style: TERMINAL_STYLE,
             "Loading..."
         }
     }
 }
 
 #[component]
-fn TerminalText(future: Resource<Arc<RwLock<Child>>>) -> Element {
-    if let Some(ref sh1) = *future.read_unchecked() {
-        let mut buffer = use_signal(|| "".to_string());
-        let mut input_text = use_signal(|| "".to_string());
-        let mut commands = use_signal(|| "".to_string());
+fn ConcreteTerminal(terminal_states: Signal<TerminalStates>, index: usize) -> Element {
 
-        let write_rc = Arc::clone(sh1); //idk how to to it nicely :/
-        let _ = use_resource(move ||{ //pushing commands to stdin
-            let sh = Arc::clone(&write_rc); //idk how to to it nicely :/
-            async move {
+    let command2 = terminal_states().states[index].command.clone();
+    let process = use_resource(move || {
+        let command = command2.clone();
+        async move {
+            sleep(Duration::from_secs(1)).await;
+            launch_sh(command).await
+        }
+    });
+
+    let Some(ref sh1) = *process.read_unchecked() else {
+        return rsx! {
+            TerminalLoading {}
+        };
+    };
+
+    let mut commands: Signal<String> = use_signal(|| "".to_string());
+
+    let write_rc = Arc::clone(sh1);
+    let _ = use_resource(move || {
+        //pushing commands to stdin
+        let sh = Arc::clone(&write_rc);
+        async move {
+            let mut sh = sh.write().await;
+            let stdin = sh.stdin.as_mut().unwrap();
+            if commands.read_unchecked().is_empty() {
+                return;
+            }
+            stdin
+                .write_all(commands.read_unchecked().as_bytes())
+                .await
+                .expect("Failed to write to stdin");
+            stdin.flush().await.expect("Failed to flush stdin");
+            dbg!(commands.read());
+        }
+    });
+
+    let read_rc = Arc::clone(sh1); 
+    let _ = use_future(move || {
+        //pulling commands from stdout
+        let sh = Arc::clone(&read_rc); 
+        async move {
+            loop {
+                sleep(Duration::from_millis(10)).await;
                 let mut sh = sh.write().await;
-                let stdin = sh.stdin.as_mut().unwrap();
-                if commands.read_unchecked().is_empty() {
-                    return;
-                }
-                stdin.write_all(commands.read_unchecked().as_bytes())
-                    .await.expect("Failed to write to stdin");
-                stdin.flush().await.expect("Failed to flush stdin");
-                dbg!(commands.read());
+                let stdout = sh.stdout.as_mut().expect("Failed to get stdout");
+                let mut outBuf = BufReader::new(stdout);
+
+                let Ok(buf) = timeout(Duration::from_millis(200), outBuf.fill_buf()).await else {
+                    continue;
+                };
+
+                let Ok(buf) = buf else {
+                    dbg!("Failed to read from stdout");
+                    continue;
+                };
+
+                let buffer_str = &*String::from_utf8_lossy(buf);
+                terminal_states.write().buffers[index].push_str(buffer_str);
             }
-        });
+        }
+    });
 
-        let read_rc = Arc::clone(sh1); //idk how to to it nicely :/
-        use_future(move || { //pulling commands from stdout
-            let sh = Arc::clone(&read_rc); //idk how to to it nicely :/
-            async move {
-                loop {
-                    sleep(Duration::from_millis(10)).await;
-                    let mut sh = sh.write().await;
-                    let stdout = sh.stdout.as_mut().expect("Failed to get stdout");
-                    let mut outBuf = BufReader::new(stdout);
 
-                    let Ok( buf) =  timeout(Duration::from_millis(200), outBuf.fill_buf()).await else {
-                        continue;
-                    };
-
-                    let Ok(buf ) = buf else {
-                        dbg!("Failed to read from stdout");
-                        continue;
-                    };
-
-                    let buffer_str = &*String::from_utf8_lossy(buf);
-                    buffer.write().push_str(buffer_str);
-                }
+    rsx! {
+        div {
+            style: "display: flex; flex-direction: column; height: 100%; width: 100%; ",
+            pre {
+                style: TERMINAL_STYLE,
+                background_color: "rgb(6, 7, 17)",
+                color: "rgb(140, 255, 111)",
+                "{terminal_states().buffers[index]}"
             }
-        });
+            input {
+                style: "color: white; height: 30px; width: 100%; margin: 0; padding: 0; border: 0;",
+                background_color: "rgb(19, 18, 34)",
+                value: terminal_states().input_texts[index].clone(),
 
-        rsx! {
-            div {
-                style: "display: flex; flex-direction: column; height: 100%;",
-                pre {
-                    style: "background-color: black; color: white; width: 100%; flex: 1; overflow-y: scroll; 
-                            margin: 0; padding: 0; border: 0; cursor: text; scroll-behavior: smooth;",
-                    "{buffer}"
-                }
-            
-                input {
-                    style: "background-color: black; color: white; height: 30px; width: 100%; margin: 0; padding: 0; border: 0;",
-                    value: input_text,
-                    
-                    oninput: move |event| {
-                        let val = event.value();
-                        *input_text.write() = val.clone();
-                    },
-                    
-                    onkeydown: move |event| {
-                        if event.key() == Key::Enter {
-                            dbg!("Enter pressed");
-                            *commands.write() = format!("{}\n", input_text.read());
-                            *input_text.write() = "".to_string();
-                        }
+                oninput: move |event| {
+                    let val = event.value();
+                    terminal_states.write().input_texts[index] = val.clone();
+                },
+
+                onkeydown: move |event| {
+                    if event.key() == Key::Enter {
+                        *commands.write() = format!("{}\n", terminal_states().input_texts[index]);
+                        terminal_states.write().input_texts[index] = "".to_string();
                     }
                 }
             }
-        }
-    } else {
-        rsx! {
-            TerminalLoading {}
         }
     }
 }
