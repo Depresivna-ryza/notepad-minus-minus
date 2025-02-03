@@ -39,7 +39,7 @@ fn TerminalLauncher(terminal_states: Signal<TerminalStates>) -> Element {
         div {
             class: "terminal-launcher-input",
             input {
-                style: "margin-top: 10px; padding: 10px; border: 1px solid #555555; border-radius: 5px; width: 80%; max-width: 300px; background-color: #2e2e2e; color: #ffffff;",
+                style: "margin-top: 10px; padding: 10px; outline: none; border: 1px solid #555555; width: 80%; max-width: 300px; background-color: #2e2e2e; color: #ffffff;",
                 oninput: move |e| *input_text.write() = e.value(),
                 value: input_text,
                 placeholder: "Enter command to launch terminal (cmd)",
@@ -64,7 +64,7 @@ static ICON_STYLE: &str =
     border-radius: 3px; cursor: pointer; display: flex; align-items: center; 
     justify-content: center; height: 25px; width: 40px";
 
-static HIGHLIGHT_COLOR: &str = "#61dafb";
+static HIGHLIGHT_COLOR: &str = "#6794a1";
 static DEFAULT_COLOR: &str = "#282c34";
 
 #[component]
@@ -148,6 +148,7 @@ pub fn Terminal() -> Element {
                 },
                 onclick: move |_| terminal_states.write().active_index = None,
                 Icon {
+                    fill: if terminal_states().active_index.clone().is_none() {"black"} else {"rgb(185, 185, 185)"},
                     icon: Shape::Plus,
                     size: ICON_SIZE,
                 }
@@ -198,8 +199,8 @@ fn ConcreteTerminal(terminal_states: Signal<TerminalStates>, index: usize) -> El
                 onmounted: move |_| async move { sleep(Duration::from_secs(5)).await; terminal_states.write().remove(index); },
                 class: "terminal-launcher-input",
                 div {
-                    style: "padding: 10px; border-radius: 3px; background-color: rgba(255, 185, 185, 0.61); color: black; font-size: 15px; font-weight: 500; 
-                        text-align: center;",
+                    style: "padding: 10px; background-color: rgba(255, 185, 185, 0.61); color: black; font-size: 15px; font-weight: 500; 
+                        text-align: center; font-family: 'JetBrains Mono';",
                     "Failed to launch terminal with command: \"{terminal_states().states[index].command.clone()}\""
                 }
             }
