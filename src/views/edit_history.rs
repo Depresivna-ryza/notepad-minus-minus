@@ -40,7 +40,7 @@ pub fn EditHistory(tabs: Signal<Tabs>) -> Element {
             }
             div {
                 style: "display: flex; flex-direction: column; width: 100%; 
-                        align-items: center; overflow-y: auto; overflow-x: hidden; flex: 1",
+                        align-items: center; overflow-y: auto; flex: 1",
                 for (i, event) in history.iter().enumerate().rev() {
                     HistoryLine {
                         tabs: tabs, 
