@@ -146,51 +146,42 @@ pub fn RightClickMenu(fs_item: FileSystemItem) -> Element {
                     focus_state.write().clear_focus();
                 }
             },
-            
+
             div {
+                class: "dialog-content",
                 onmousedown: move |_| button_pressed.set(true),
 
                 match fs_item {
                     FileSystemItem::Directory(_) => rsx!(
-                        p { 
-                            button { 
-                                class: "option-button",
-                                onclick: create_directory,
-                                "Create new directory", 
-                            } 
-                        }
-                        p { 
-                            button { 
-                                class: "option-button",
-                                onclick: create_file,
-                                "Create new file" 
-                            } 
-                        }
-                        p { 
-                            button { 
-                                class: "option-button",
-                                onclick: delete_dir,
-                                "Delete" 
-                            } 
-                        }
+                        div { 
+                            class: "option-button",
+                            onclick: create_directory,
+                            "Create new directory", 
+                        } 
+                        div { 
+                            class: "option-button",
+                            onclick: create_file,
+                            "Create new file" 
+                        } 
+                        div { 
+                            class: "option-button",
+                            onclick: delete_dir,
+                            "Delete" 
+                        } 
                     ),
                     FileSystemItem::File(_) => rsx!(
-                        p {
-                            button {
-                                class: "option-button",
-                                onclick: delete_file,
-                                "Delete"
-                            }
+                        div {
+                            class: "option-button",
+                            onclick: delete_file,
+                            "Delete"
                         }
                     ),
                 }
-                p { 
-                    button { 
-                        class: "option-button",
-                        onclick: rename,
-                        "Rename" 
-                    } 
-                }
+                div {
+                    class: "option-button",
+                    onclick: rename,
+                    "Rename" 
+                } 
             }
         }
     )

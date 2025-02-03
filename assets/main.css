@@ -101,10 +101,8 @@ span {
 
 .right-click-menu {
     position: absolute;
-    background: white;
-    border: 1px solid black;
+    background-color: #1e1e1e;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    padding: 10px;
     z-index: 1000;
 }
 
@@ -319,13 +317,15 @@ span {
 }
 
 .history-item {
-    display: flex;
+    display: block; 
     justify-content: center;
     padding: 10px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     cursor: pointer;
     width: 100%;
-
+    text-overflow: ellipsis; 
+    overflow: hidden; 
+    white-space: nowrap;
     transition: background-color 0.3s ease;
 }
 
@@ -400,6 +400,54 @@ span {
     background-color: #4e4e4e;
 }
 
+.dialog-content {
+    display: flex;
+    flex-direction: column;
+    /* align-items: center; */
+    gap: 0px;
+    width: 100%;
+    background-color: red;
+}
+
+.option-button {
+    width: 100%;
+    padding: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15px;
+    background-color: #1e1e1e;
+    color: white;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    margin: 0 0 0 0;
+    transition: background-color 0.3s ease;
+}
+
+.choose-directory-btn {
+    width: 100%;
+    padding: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15px;
+    background-color: #1e1e1e;
+    color: white;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    margin: 0 0 0 0;
+    transition: background-color 0.3s ease;
+    align-items: center;
+    display: flex;
+    justify-content: center;
+}
+
+.choose-directory-btn:hover {
+    background-color: #2e2e2e; /* Slightly lighter background on hover */
+}
+
+.choose-directory-btn:active {
+    background-color: #1f1f1f; /* Even lighter background on click */
+    transition: background-color 0.1s ease,;
+}
 @font-face {
     font-family: 'JetBrains Mono';
     src: url('https://cdn.jsdelivr.net/gh/JetBrains/JetBrainsMono/web/woff2/JetBrainsMono-Bold-Italic.woff2') format('woff2'),
