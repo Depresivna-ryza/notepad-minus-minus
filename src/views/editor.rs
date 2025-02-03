@@ -183,7 +183,7 @@ pub fn Editor(tabs: Signal<Tabs>) -> Element {
                     (_,_,_,_) => {}
                 }
             },
-            style: "display: flex; flex-direction: column; flex: 1;",
+            style: "display: flex; flex-direction: column; flex: 1; overflow: hidden",
             TopStatusBar {tabs},
             div {
                 style: "height: 2px; background-color: rgb(90, 89, 75); width: 100%; align-self: center;",
@@ -291,7 +291,7 @@ pub fn EditorLine(
             },
 
             style: "display: flex; flex-direction: row; font-family: JetBrains Mono; 
-                    font-size: 16px; white-space: pre;",
+                    font-size: 16px; white-space: pre; color: white; padding: 0 10px;",
             background_color: if line_i == caret_line() { "gray" } else { "" },
             span {
                 style: "padding-right: 10px; min-width: 30px;",
@@ -428,7 +428,8 @@ pub fn Breadcrumbs(path: ReadOnlySignal<Option<Vec<String>>>) -> Element {
     rsx! {
         div {
             class: "scrollbar-thin",
-            style: "background-color: green; height: 100%; display: flex; flex: 1; overflow-x: auto; white-space: nowrap",
+            style: "display: flex; overflow-x: auto; flex: 1; color: white; align-items: center;
+                        width: 100%; height: 100%; font-family: JetBrains Mono; font-size: 12px; margin-left: 5px;",
             for (i, part) in path.iter().enumerate() {
                 span {
                     style: if i == path.len() - 1 {
@@ -441,7 +442,7 @@ pub fn Breadcrumbs(path: ReadOnlySignal<Option<Vec<String>>>) -> Element {
 
                 if i < path.len() - 1 {
                     span {
-                        style: "color: yellow; margin: 0 5px;",
+                        style: "color: orange; margin: 0 5px;",
                         ">"
                     }
                 }

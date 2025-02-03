@@ -18,7 +18,7 @@ pub fn DirectoryComponent(path: PathBuf) -> Element {
     };
 
     let item_text_class = if file_system.read().is_focused(&path) {
-        "item-text-selected"
+        "item-text selected"
     } else {
         "item-text"
     };
@@ -54,14 +54,14 @@ pub fn DirectoryComponent(path: PathBuf) -> Element {
         div {
             class: "item-text",
             div {
-                a {
-                    style: "white-space: nowrap;",
+                style: "display: flex; flex-direction: row; align-items: center; margin-left: 10px; margin-top: 5px;",
+                div {
+                    style: "white-space: nowrap; cursor: pointer;",
                     onclick: open_close,
-
                     " {opened_string} "
                 }
-                
-                a {
+
+                div {
                     class: item_text_class,
                     onclick: change_focus,
                     oncontextmenu: open_right_click_menu,
@@ -69,23 +69,26 @@ pub fn DirectoryComponent(path: PathBuf) -> Element {
                     " { file_system.read().get_directory_name(&path) } "
                 }
             }
-            
+
             if right_click_menu_handler.is_open() {
                 RightClickMenu { fs_item: FileSystemItem::Directory(Directory::from(&path.clone())) }
             }
-            
-            if file_system.read().directory_is_opened(&path) {
-                for item in file_system.read().get_directory_children(&path).iter() {
-                    if let FileSystemItem::Directory(dir) = item {
-                        DirectoryComponent { path: dir.get_path().clone() }
+            div {
+                style: " border-left: 1px solid red; margin-left: 10px; ",
+                if file_system.read().directory_is_opened(&path) {
+                    for item in file_system.read().get_directory_children(&path).iter() {
+                        if let FileSystemItem::Directory(dir) = item {
+                            DirectoryComponent { path: dir.get_path().clone() }
+                            
+                        }
                     }
-                }
 
-                for item in file_system.read().get_directory_children(&path).iter() {
+                    for item in file_system.read().get_directory_children(&path).iter() {
                     if let FileSystemItem::File(file) = item {
                         File { file: file.clone() }
                     }
                 }
+            }
             }
         }
     )

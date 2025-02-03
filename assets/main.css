@@ -59,20 +59,24 @@ span {
 
 .file-explorer {
     flex: 1; 
-    background-color: lightgreen;
-    overflow-x: auto; 
-    overflow-y: auto;
+    background-color: rgb(33, 36, 44);
+    overflow: hidden;
+    color: white;
+    font-family: 'JetBrains Mono', monospace;
 }
 
 /* Directory items */
 .item-text {
-    color: darkred; 
-    margin: 5px 0px 5px 20px;
+    color: white; 
+    margin-left: 10px;
+    margin-top: 2px;
+    padding: 0;
+    flex: 1;
+    cursor: pointer;
 }
 
-.item-text-selected {
+.item-text.selected {
     color: red; 
-    margin: 5px 0px 5px 20px;
 }
 
 .right-click-menu {
