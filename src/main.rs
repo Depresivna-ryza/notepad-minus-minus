@@ -1,9 +1,11 @@
 pub mod models;
 pub mod views;
 
+
 use std::rc::Rc;
 use dioxus::desktop::window;
 use models::panels::ShownPanels;
+use futures::FutureExt;
 use models::tabs::Tabs;
 use tracing::info;
 use views::{edit_history::EditHistory, find_replace::FindReplace};
@@ -32,6 +34,7 @@ pub fn Layout() -> Element {
     let error_dialog_handler = use_context_provider(|| ErrorDialogHandler::new());
 
     let tabs = use_signal(Tabs::new);
+
     let shown_panels = ShownPanels::new();
     
     let mut terminal_height = use_signal(|| 200);
