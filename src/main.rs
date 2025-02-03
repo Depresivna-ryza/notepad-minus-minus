@@ -35,8 +35,8 @@ fn main() {
 pub fn Layout() -> Element {
     let error_dialog_handler = use_context_provider(|| ErrorDialogHandler::new());
     let right_click_menu_handler = use_context_provider(|| Signal::new(RightClickMenuHandler::new()));
-    let mut file_system = use_context_provider(|| Signal::new(FileSystem::new()));
-    let operation_dialog_handler = use_context_provider(|| OperationDialogHandler::new());
+    let _ = use_context_provider(|| Signal::new(FileSystem::new()));
+    let _ = use_context_provider(|| OperationDialogHandler::new());
 
     let tabs = use_signal(Tabs::new);
 
