@@ -21,6 +21,7 @@ pub fn EditHistory(tabs: Signal<Tabs>) -> Element {
                 }
             }
         }
+
     };
 
     let history = file.event_history.clone();

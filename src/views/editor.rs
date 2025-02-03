@@ -286,15 +286,15 @@ pub fn EditorLine(
     rsx! {
         div {
             onmounted: move |e| {
-                // info!("mounted line: {:?}", e);
                 element.set(Some(e.data()));
             },
 
             style: "display: flex; flex-direction: row; font-family: JetBrains Mono; 
                     font-size: 16px; white-space: pre; color: white; padding: 0 10px;",
-            background_color: if line_i == caret_line() { "gray" } else { "" },
+            background_color: if line_i == caret_line() { "rgb(65, 65, 65)" } else { "" },
             span {
-                style: "padding-right: 10px; min-width: 30px;",
+                style: "padding-right: 10px; min-width: 40px;",
+                color: if line_i == caret_line() { "rgb(150, 111, 40)" } else { "rgb(85, 85, 85)" },
                 "{line_i}"
             }
 
@@ -307,9 +307,7 @@ pub fn EditorLine(
                     },
 
                     style:
-                        if i == caret_col && line_i == caret_line() {
-                            "; background-color: yellow;"
-                        } else if let (Some(start), Some(end)) = (selection_start, selection_end) {
+                        if let (Some(start), Some(end)) = (selection_start, selection_end) {
                             if (start.ln < line_i && line_i < end.ln ) || 
                                 (start.ln == line_i && line_i == end.ln && start.col <= i && i <= end.col) ||
                                 (start.ln == line_i && line_i < end.ln && start.col <= i) ||
@@ -318,6 +316,8 @@ pub fn EditorLine(
                             } else {
                                 ""
                             }
+                        } else if i == caret_col && line_i == caret_line() {
+                            "; background-color: #756336;"
                         } else {
                             ""
                         },
