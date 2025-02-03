@@ -1,4 +1,4 @@
-/* App-wide styling */
+
 :root {
     --background-color: #0f1116;
     --text-color: #ffffff;
@@ -65,7 +65,7 @@ span {
     font-family: 'JetBrains Mono', monospace;
 }
 
-/* Directory items */
+
 .item-text {
     color: white; 
     margin-left: 10px;
@@ -86,7 +86,7 @@ span {
     margin: 0px 0px 0px 20px;
     align-items: center;
     font-size: 15px;
-    transition: background-color 0.3s ease, color 0.3s ease; /* Smooth transition for background color and color */
+    transition: background-color 0.3s ease, color 0.3s ease; 
 }
 
 .file-text:hover {
@@ -149,12 +149,12 @@ span {
 
 .terminal-slider {
     height: 5px;
-    cursor: ns-resize; /* Horizontal resize cursor */
+    cursor: ns-resize; 
 }
 
 .left-panel-slider {
     width: 5px;
-    cursor: ew-resize; /* Column resize cursor */
+    cursor: ew-resize; 
 }
 
 .left-panel-slider:hover, .terminal-slider:hover {
@@ -163,9 +163,9 @@ span {
 }
 
 
-/* Side panel icon styles */
+
 .side-panel-icon {
-    position: relative; /* Ensure the pseudo-element is positioned relative to the button */
+    position: relative; 
     border: none;
     background-color: transparent;
     cursor: pointer;
@@ -180,25 +180,25 @@ span {
     left: 0;
     top: 0;
     bottom: 0;
-    width: 4px; /* Width of the colored margin */
-    background-color: transparent; /* Initial background color */
-    transition: background-color 0.3s ease; /* Smooth transition for background color */
+    width: 4px; 
+    background-color: transparent; 
+    transition: background-color 0.3s ease; 
 }
 
 .side-panel-icon:hover {
-    background-color: var(--side-panel-icon-hover-background); /* Subtle background color on hover */
+    background-color: var(--side-panel-icon-hover-background); 
 }
 
 .side-panel-icon:hover::before {
-    background-color: var(--side-panel-icon-hover-margin-color); /* Change the margin color to match the background color */
+    background-color: var(--side-panel-icon-hover-margin-color); 
 }
 
 .side-panel-icon.selected {
-    background-color: var(--side-panel-icon-selected-background); /* Background color when selected */
+    background-color: var(--side-panel-icon-selected-background); 
 }
 
 .side-panel-icon.selected::before {
-    background-color: var(--side-panel-icon-selected-margin-color); /* Margin color when selected */
+    background-color: var(--side-panel-icon-selected-margin-color); 
 }
 
 .save-button {
@@ -212,18 +212,18 @@ span {
     font-size: 15px;
     border: none;
     cursor: pointer;
-    transition: background-color 0.3s ease; /* Smooth transition for background color */
+    transition: background-color 0.3s ease; 
 }
 
 .save-button:hover {
-    background-color: rgb(92, 63, 63); /* Darken background color on hover */
+    background-color: rgb(92, 63, 63); 
 }
 
 .save-button:active {
-    background-color: rgb(44, 44, 44); /* Darken background color on click */
+    background-color: rgb(44, 44, 44); 
 }
 
-/* Tab styles */
+
 .tab {
     display: inline-flex;
     align-items: center;
@@ -248,30 +248,30 @@ span {
     top: 0;
     left: 0;
     right: 0;
-    height: 4px; /* Height of the colored margin */
-    background-color: transparent; /* Initial background color */
-    transition: background-color 0.3s ease; /* Smooth transition for background color */
+    height: 4px; 
+    background-color: transparent; 
+    transition: background-color 0.3s ease; 
 }
 
 .tab:hover {
-    background-color: rgba(255, 255, 255, 0.1); /* Slightly lighter background on hover */
+    background-color: rgba(255, 255, 255, 0.1); 
 }
 
 .tab:hover::before {
-    background-color: var(--side-panel-icon-selected-margin-color); /* Highlighted margin color on hover */
+    background-color: var(--side-panel-icon-selected-margin-color); 
 }
 
 .tab.highlighted::before {
-    background-color: var(--side-panel-icon-hover-margin-color); /* Highlighted margin color */
+    background-color: var(--side-panel-icon-hover-margin-color); 
 }
 
 .tab.highlighted {
-    background-color: var(--side-panel-icon-hover-background); /* Highlighted background color */
+    background-color: var(--side-panel-icon-hover-background); 
 }
 
 .tab.non-exists {
-    text-decoration: line-through; /* Cross out text */
-    color: rgba(255, 0, 0, 0.7); /* Red color for deleted files */
+    text-decoration: line-through; 
+    color: rgba(255, 0, 0, 0.7); 
 }
 
 .custom-checkbox {
@@ -283,6 +283,7 @@ span {
     outline: none;
     cursor: pointer;
     position: relative;
+    margin: 0;
 }
 
 .custom-checkbox:checked::before {
@@ -309,11 +310,11 @@ span {
 }
 
 .custom-button:hover {
-    background-color: #2e2e2e; /* Slightly lighter background on hover */
+    background-color: #2e2e2e; 
 }
 
 .custom-button:active {
-    background-color: #3e3e3e; /* Even lighter background on click */
+    background-color: #3e3e3e; 
 }
 
 .history-item {
@@ -342,16 +343,16 @@ span {
     background: transparent; 
 }
 
-/* Hide scrollbar for Firefox */
+
 .invisible-scrollbar {
     scrollbar-width: none;
     -ms-overflow-style: none;
 }
 
-/* Ensure the content is scrollable */
+
 .invisible-scrollbar {
-    overflow: auto; /* Enable scrolling */
-    position: relative; /* Ensure the scrollbar overlaps the content */
+    overflow: auto; 
+    position: relative; 
 }
 
 .left-panel {
@@ -360,7 +361,7 @@ span {
     text-overflow: ellipsis;
 }
 
-/* Terminal launcher styles */
+
 .terminal-launcher-input {
     display: flex;
     flex-direction: column;
@@ -377,7 +378,7 @@ span {
     margin-top: 10px;
     padding: 10px;
     border: 1px solid #555555;
-    /* border-radius: 5px; */
+    
     width: 80%;
     max-width: 300px;
     background-color: #2e2e2e;
@@ -389,7 +390,7 @@ span {
     margin-top: 10px;
     padding: 10px 20px;
     border: none;
-    /* border-radius: 5px; */
+    
     cursor: pointer;
     background-color: #3e3e3e;
     color: #ffffff;
@@ -403,7 +404,7 @@ span {
 .dialog-content {
     display: flex;
     flex-direction: column;
-    /* align-items: center; */
+    
     gap: 0px;
     width: 100%;
     background-color: red;
@@ -441,11 +442,11 @@ span {
 }
 
 .choose-directory-btn:hover {
-    background-color: #2e2e2e; /* Slightly lighter background on hover */
+    background-color: #2e2e2e; 
 }
 
 .choose-directory-btn:active {
-    background-color: #1f1f1f; /* Even lighter background on click */
+    background-color: #1f1f1f; 
     transition: background-color 0.1s ease,;
 }
 @font-face {
