@@ -11,16 +11,11 @@ In the settings it is possible to specify the number of steps (undo/redo) that t
 The application can run a "live share" mode that will create a watch session and return a code and password for the created session. In other instances of the application, this session can be connected to and the code watched. How this mode is implemented (i.e. cloud vs. P2P) is up to you. Adding different themes to the UI will be appreciated.
 
 ### Functionality
-- File handling (open, create)
+- General Editor Functionality
+- File handling (open, create, rename, delete)
+- Automatic File Explorer Update
 - Undo/redo
 - History of recent changes
 - Keyboard shortcuts
-- Find & replace
-- Realtime sharing sessions
-
-### Requirements
-- Controllable with mouse and keyboard
-- Has to have settings menu for configuration
-- Has to support standard text editor functionality (shift select, ctrl movement, copy&paste)
-- Users are able to login to live sessions using code + password
-- ?? Multiple UI themes
+- Find
+- (Multiple) Terminal Support
