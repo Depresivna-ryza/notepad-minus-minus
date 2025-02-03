@@ -61,6 +61,7 @@ pub fn OperationDialog() -> Element {
 
     rsx! {
         div {
+            font_family: "JetBrains Mono",
             class: "dialog-overlay",
             div {
                 class: "dialog",
@@ -174,22 +175,32 @@ fn CreateRenameDialog() -> Element {
     rsx! {
         div {
             class: "dialog-content",
-            h2 { { header } }
+            font_family: "JetBrains Mono",
+            
+            h2 { 
+                font_family: "JetBrains Mono",
+                "{ header }"
+            }
             input {
                 class: "name-input",
+                font_family: "JetBrains Mono",
                 placeholder: "Enter name...",
                 value: "{new_name}",
                 oninput: on_input,
             }
-            button {
-                class: "submit-button",
-                onclick: on_submit,
-                "Submit"
-            }
-            button {
-                class: "cancel-button",
-                onclick: cancel,
-                "Cancel"
+            div {
+                display: "flex",
+                flex_direction: "row",
+                div {
+                    class: "dialog-button",
+                    onclick: on_submit,
+                    "Submit"
+                }
+                div {
+                    class: "dialog-button",
+                    onclick: cancel,
+                    "Cancel"
+                }
             }
         }
     }
@@ -252,17 +263,27 @@ fn DeleteDialog() -> Element {
 
     rsx! {
         div {
-            class: "dialog-content",
-            p { "Are you sure you want to delete this item?" }
-            button {
-                class: "submit-button",
-                onclick: on_submit,
-                "Yes"
+            font_family: "JetBrains Mono",
+            flex_direction: "row",
+            p { 
+                font_family: "JetBrains Mono",
+                "Are you sure you want to delete this item?" 
             }
-            button { 
-                class: "cancel-button",
-                onclick: cancel,
-                "Cancel"
+            
+            div {
+                class: "dialog-content",
+                display: "flex",
+                
+                div {
+                    class: "dialog-button",
+                    onclick: on_submit,
+                    "Yes"
+                }
+                div { 
+                    class: "dialog-button",
+                    onclick: cancel,
+                    "Cancel"
+                }
             }
         }
     }

@@ -208,7 +208,7 @@ pub fn EditorText(
                         flex: 1; flex-direction: column; color: white; position: relative; justify-content: center; align-items: center;",
                 div {
                     style: "color: gray; font-size: 20px; font-family: JetBrains Mono;",
-                    "No file is selected"
+                    "No file selected"
                 }
             }
         };
@@ -419,7 +419,7 @@ pub fn Breadcrumbs(path: ReadOnlySignal<Option<Vec<String>>>) -> Element {
                         width: 100%; height: 100%;",
                 div {
                     style: "color: gray; font-size: 15px; font-family: JetBrains Mono;",
-                    "No file is selected"
+                    "No file selected"
                 }
             }
         };
