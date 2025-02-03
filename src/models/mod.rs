@@ -1,3 +1,6 @@
+
+pub mod network;
+pub mod sessions;
 pub mod tabs;
 pub mod text;
 pub mod panels;
