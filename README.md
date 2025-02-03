@@ -10,7 +10,7 @@ In the settings it is possible to specify the number of steps (undo/redo) that t
 
 The application can run a "live share" mode that will create a watch session and return a code and password for the created session. In other instances of the application, this session can be connected to and the code watched. How this mode is implemented (i.e. cloud vs. P2P) is up to you. Adding different themes to the UI will be appreciated.
 
-### Functionality
+### Implemented Functionality
 - General Editor Functionality
 - File handling (open, create, rename, delete)
 - Automatic File Explorer Update
