@@ -1,5 +1,7 @@
-use dioxus::{hooks::use_signal, signals::{ReadOnlySignal, Signal}};
-
+use dioxus::{
+    hooks::use_signal,
+    signals::{ReadOnlySignal, Signal},
+};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct ShownPanels {
@@ -30,14 +32,20 @@ impl From<ShownPanels> for ReadOnlyShownPanels {
     }
 }
 
+impl Default for ShownPanels {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ShownPanels {
     pub fn new() -> Self {
         Self {
-            terminal: use_signal(||false),
-            search: use_signal(||false),
-            file_tree: use_signal(||true),
-            sessions: use_signal(||false),
-            history: use_signal(||false),
+            terminal: use_signal(|| false),
+            search: use_signal(|| false),
+            file_tree: use_signal(|| true),
+            sessions: use_signal(|| false),
+            history: use_signal(|| false),
         }
     }
 }

@@ -1,9 +1,9 @@
-use std::path::{Path, PathBuf};
-use std::fs;
 use dioxus::prelude::*;
+use std::fs;
+use std::path::{Path, PathBuf};
 
-use crate::views::dialogs::error::ErrorDialogHandler;
 use crate::models::file_system::FileSystem;
+use crate::views::dialogs::error::ErrorDialogHandler;
 
 #[derive(Clone)]
 pub enum Operation {
@@ -18,6 +18,12 @@ pub enum Operation {
 pub struct OperationDialogHandler {
     item_path: Signal<Option<PathBuf>>,
     operation: Signal<Option<Operation>>,
+}
+
+impl Default for OperationDialogHandler {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl OperationDialogHandler {
@@ -52,7 +58,6 @@ impl OperationDialogHandler {
     pub fn is_operation_set(&self) -> bool {
         self.operation.read().is_some()
     }
-
 }
 
 #[component]
@@ -82,7 +87,7 @@ fn CreateRenameDialog() -> Element {
     let mut error_dialog_handler = use_context::<ErrorDialogHandler>();
     let mut file_system = use_context::<Signal<FileSystem>>();
 
-    let new_name = use_signal(|| String::new());
+    let new_name = use_signal(String::new);
 
     let header = match operation_dialog_handler.get_operation() {
         Some(Operation::CreateDirectory) => "Create Directory",
@@ -92,14 +97,13 @@ fn CreateRenameDialog() -> Element {
     };
 
     let on_input = {
-        let mut new_directory_name = new_name.clone();
+        let mut new_directory_name = new_name;
         move |evt: FormEvent| {
             new_directory_name.set(evt.value().clone());
         }
     };
 
     let on_submit = {
-        let new_name = new_name.clone();
         let mut operation_dialog_handler = operation_dialog_handler.clone();
 
         move |_| {
@@ -111,7 +115,7 @@ fn CreateRenameDialog() -> Element {
                     error_dialog_handler.show("Error path is empty".to_string());
                     operation_dialog_handler.clear();
                     return;
-                },
+                }
             };
 
             if new_name().is_empty() {
@@ -122,37 +126,58 @@ fn CreateRenameDialog() -> Element {
 
             match operation_dialog_handler.get_operation() {
                 Some(Operation::CreateDirectory) => {
-                    new_path = format!("{}/{}", path.to_str().expect("Path is empty"), new_name.read().as_str());
+                    new_path = format!(
+                        "{}/{}",
+                        path.to_str().expect("Path is empty"),
+                        new_name.read().as_str()
+                    );
 
                     if let Err(error) = fs::create_dir(&new_path) {
                         error_dialog_handler.show(error.to_string());
                     }
-                },
+                }
                 Some(Operation::CreateFile) => {
-                    new_path = format!("{}/{}", path.to_str().expect("Path is empty"), new_name.read().as_str());
+                    new_path = format!(
+                        "{}/{}",
+                        path.to_str().expect("Path is empty"),
+                        new_name.read().as_str()
+                    );
 
                     if let Err(error) = fs::File::create(&new_path) {
                         error_dialog_handler.show(error.to_string());
                     }
-                },
+                }
                 Some(Operation::Rename) => {
-                    new_path = format!("{}/{}", path.parent().expect("Parent path is empty").to_str().expect("Path is empty"), new_name.read().as_str());
+                    new_path = format!(
+                        "{}/{}",
+                        path.parent()
+                            .expect("Parent path is empty")
+                            .to_str()
+                            .expect("Path is empty"),
+                        new_name.read().as_str()
+                    );
 
                     if let Err(error) = fs::rename(path.to_str().expect(""), &new_path) {
                         error_dialog_handler.show(error.to_string());
                     }
-
-                },
+                }
                 _ => (),
             }
 
             // Refresh the file system if the root directory is being renamed
-            if matches!(operation_dialog_handler.get_operation(), Some(Operation::Rename)) && file_system.read().get_root().map_or(false, |root| path == *root.get_path()) {
+            if matches!(
+                operation_dialog_handler.get_operation(),
+                Some(Operation::Rename)
+            ) && file_system
+                .read()
+                .get_root()
+                .map_or(false, |root| path == *root.get_path())
+            {
                 file_system.replace(FileSystem::from(Path::new(&new_path)));
                 operation_dialog_handler.clear();
                 return;
             }
-            
+
             // Refresh parent if renaming
             if let Some(Operation::Rename) = operation_dialog_handler.get_operation() {
                 path.pop();
@@ -163,7 +188,7 @@ fn CreateRenameDialog() -> Element {
             operation_dialog_handler.clear();
         }
     };
-    
+
     let cancel = {
         let mut operation_dialog_handler = operation_dialog_handler.clone();
 
@@ -176,8 +201,8 @@ fn CreateRenameDialog() -> Element {
         div {
             class: "dialog-content",
             font_family: "JetBrains Mono",
-            
-            h2 { 
+
+            h2 {
                 font_family: "JetBrains Mono",
                 "{ header }"
             }
@@ -222,7 +247,7 @@ fn DeleteDialog() -> Element {
                     error_dialog_handler.show("Error path is empty".to_string());
                     operation_dialog_handler.clear();
                     return;
-                },
+                }
             };
 
             match operation_dialog_handler.get_operation() {
@@ -230,17 +255,21 @@ fn DeleteDialog() -> Element {
                     if let Err(error) = fs::remove_dir_all(path.to_str().expect("Path is empty")) {
                         error_dialog_handler.show(error.to_string());
                     }
-                },
+                }
                 Some(Operation::DeleteFile) => {
                     if let Err(error) = fs::remove_file(path.to_str().expect("Path is empty")) {
                         error_dialog_handler.show(error.to_string());
                     }
-                },
+                }
                 _ => (),
             }
-            
+
             // Refresh the file system if the root directory is being deleted
-            if file_system.read().get_root().map_or(false, |root| path == *root.get_path()) {
+            if file_system
+                .read()
+                .get_root()
+                .map_or(false, |root| path == *root.get_path())
+            {
                 file_system.replace(FileSystem::new());
                 operation_dialog_handler.clear();
                 return;
@@ -265,21 +294,21 @@ fn DeleteDialog() -> Element {
         div {
             font_family: "JetBrains Mono",
             flex_direction: "row",
-            p { 
+            p {
                 font_family: "JetBrains Mono",
-                "Are you sure you want to delete this item?" 
+                "Are you sure you want to delete this item?"
             }
-            
+
             div {
                 class: "dialog-content",
                 display: "flex",
-                
+
                 div {
                     class: "dialog-button",
                     onclick: on_submit,
                     "Yes"
                 }
-                div { 
+                div {
                     class: "dialog-button",
                     onclick: cancel,
                     "Cancel"

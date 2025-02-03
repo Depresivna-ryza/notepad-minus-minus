@@ -1,6 +1,12 @@
-use std::{cmp::{max, min}, rc::Rc};
+use std::{
+    cmp::{max, min},
+    rc::Rc,
+};
 
-use crate::models::{tabs::Tabs, text::{Caret, TextFile}};
+use crate::models::{
+    tabs::Tabs,
+    text::{Caret, TextFile},
+};
 
 use arboard::Clipboard;
 use dioxus::prelude::*;
@@ -33,7 +39,7 @@ pub fn Editor(tabs: Signal<Tabs>) -> Element {
             },
 
             onkeydown: move |e| {
-                
+
                 let ctrl = e.modifiers().contains(Modifiers::CONTROL);
                 let shift = e.modifiers().contains(Modifiers::SHIFT);
                 let altt = e.modifiers().contains(Modifiers::ALT);
@@ -79,11 +85,11 @@ pub fn Editor(tabs: Signal<Tabs>) -> Element {
                             file.insert_char(c);
                         }
                     }
-                    
+
                     (Key::Backspace, ctrl, false, false) => {
                         file.backspace(ctrl);
                     }
-                    
+
                     (Key::Delete, ctrl, false, false) => {
                         file.delete(ctrl);
                     }
@@ -127,21 +133,21 @@ pub fn Editor(tabs: Signal<Tabs>) -> Element {
 
                         let mut clipboard = Clipboard::new().ok();
                         if let Some(clip) = clipboard.as_mut() {
-                            if let Err(_) = clip.set_text(line.clone()) {
+                            if clip.set_text(line.clone()).is_err() {
                                 info!("failed to copy to clipboard");
                             } else {
                                 info!("copied to clipboard: {:?}", line);
                             }
                         }
                     }
-                        
-    
+
+
                     (Key::Character(c), true, false, false) if &c.to_ascii_lowercase() == "c" => {
                         info!("copy pressed");
                         if let Some(selection) = file.get_selection() {
                             let mut clipboard = Clipboard::new().ok();
                             if let Some(clip) = clipboard.as_mut() {
-                                if let Err(_) = clip.set_text(selection.clone()) {
+                                if clip.set_text(selection.clone()).is_err() {
                                     info!("failed to copy to clipboard");
                                 } else {
                                     info!("copied to clipboard: {:?}", selection);
@@ -174,7 +180,7 @@ pub fn Editor(tabs: Signal<Tabs>) -> Element {
                         info!("duplicate line down pressed");
                         file.duplicate_line(true);
                     }
-                    
+
                     (Key::ArrowUp, false, true, true) => {
                         info!("duplicate line up pressed");
                         file.duplicate_line(false);
@@ -188,7 +194,7 @@ pub fn Editor(tabs: Signal<Tabs>) -> Element {
             div {
                 style: "height: 2px; background-color: rgb(90, 89, 75); width: 100%; align-self: center;",
             }
-            EditorText {tabs, 
+            EditorText {tabs,
                  caret_col: caret_col(), caret_line: caret_line()},
             BottomStatusBar {tabs, caret_col: caret_col(), caret_line: caret_line(), char_idx: text.read().clone().map_or(0, |t| t.char_idx)},
         }
@@ -196,11 +202,7 @@ pub fn Editor(tabs: Signal<Tabs>) -> Element {
 }
 
 #[component]
-pub fn EditorText(
-    tabs: Signal<Tabs>,
-    caret_col: usize,
-    caret_line: usize,
-) -> Element {
+pub fn EditorText(tabs: Signal<Tabs>, caret_col: usize, caret_line: usize) -> Element {
     let Some(ref text) = tabs.read().get_current_file() else {
         return rsx! {
             div {
@@ -225,13 +227,13 @@ pub fn EditorText(
 
             style: "background-color: rgb(45, 47, 53); display: flex; overflow-y: scroll; flex: 1; flex-direction: column",
             for (i, line) in text.chars().into_iter().enumerate() {
-                
+
                 EditorLine {
                     tabs: tabs,
-                    selection_start: tabs.read().get_current_file().map(|f| f.selection.map(|s| f.get_caret_from_idx(min(s.0, s.1)))).flatten(),
-                    selection_end: tabs.read().get_current_file().map(|f| f.selection.map(|s| f.get_caret_from_idx(max(s.0, s.1)))).flatten(),
-                    content: line, 
-                    line_i: i, 
+                    selection_start: tabs.read().get_current_file().and_then(|f| f.selection.map(|s| f.get_caret_from_idx(min(s.0, s.1)))),
+                    selection_end: tabs.read().get_current_file().and_then(|f| f.selection.map(|s| f.get_caret_from_idx(max(s.0, s.1)))),
+                    content: line,
+                    line_i: i,
                     caret_col: caret_col,
                     caret_line: caret_line,
                     parent_element: element,
@@ -252,7 +254,6 @@ pub fn EditorLine(
     caret_line: ReadOnlySignal<usize>,
     parent_element: Signal<Option<Rc<MountedData>>>,
 ) -> Element {
-    
     let mut element: Signal<Option<Rc<MountedData>>> = use_signal(|| None);
 
     let _ = use_resource(move || async move {
@@ -270,10 +271,10 @@ pub fn EditorLine(
                     dbg!(parent_rect.min_y(), parent_rect.max_y());
                     dbg!(client_rect.min_y(), scroll_offset.y);
                     dbg!(client_rect.max_y(), scroll_offset.y + scroll_size.height);
-        
+
                     let height_underflown = client_rect.min_y() < parent_rect.min_y();
                     let height_overflown = client_rect.max_y() > parent_rect.max_y();
-        
+
                     if height_underflown || height_overflown {
                         let _ = elem.scroll_to(ScrollBehavior::Instant).await;
                     }
@@ -282,14 +283,13 @@ pub fn EditorLine(
         }
     });
 
-
     rsx! {
         div {
             onmounted: move |e| {
                 element.set(Some(e.data()));
             },
 
-            style: "display: flex; flex-direction: row; font-family: JetBrains Mono; 
+            style: "display: flex; flex-direction: row; font-family: JetBrains Mono;
                     font-size: 16px; white-space: pre; color: white; padding: 0 10px;",
             background_color: if line_i == caret_line() { "rgb(65, 65, 65)" } else { "" },
             span {
@@ -298,17 +298,17 @@ pub fn EditorLine(
                 "{line_i}"
             }
 
-            for (i, c) in content.chars().into_iter().map(|c| if c.clone() != '\n' { c.clone()} else {' '}).enumerate() {
+            for (i, c) in content.chars().map(|c| if c != '\n' { c} else {' '}).enumerate() {
                 span {
                     onclick: move |e| {
                         // info!("clicked on line: {:?}, col: {:?}, char: {}", line_i, i, c);
                         let selection = e.modifiers().contains(Modifiers::SHIFT);
-                        tabs.write().get_current_file_mut().map(|file| file.set_caret_position(line_i, i, selection));
+                        if let Some(file) = tabs.write().get_current_file_mut() { file.set_caret_position(line_i, i, selection) }
                     },
 
                     style:
                         if let (Some(start), Some(end)) = (selection_start, selection_end) {
-                            if (start.ln < line_i && line_i < end.ln ) || 
+                            if (start.ln < line_i && line_i < end.ln ) ||
                                 (start.ln == line_i && line_i == end.ln && start.col <= i && i <= end.col) ||
                                 (start.ln == line_i && line_i < end.ln && start.col <= i) ||
                                 (start.ln < line_i && line_i == end.ln && i <= end.col) {
@@ -330,7 +330,7 @@ pub fn EditorLine(
                 onclick: move |e| {
                     info!("clicked on line: {:?}", line_i);
                     let selection = e.modifiers().contains(Modifiers::SHIFT);
-                    tabs.write().get_current_file_mut().map(|file| file.set_caret_position(line_i, content.len() - 1, selection));
+                    if let Some(file) = tabs.write().get_current_file_mut() { file.set_caret_position(line_i, content.len() - 1, selection) }
                 }
             }
         }
@@ -342,21 +342,21 @@ pub fn TopStatusBar(tabs: Signal<Tabs>) -> Element {
     let path: Option<Vec<String>> = tabs()
         .current_file
         .map(|p| p.iter().map(|p| p.to_string_lossy().to_string()).collect());
-   
+
     rsx! {
         div {
-            style: "background-color: rgb(54, 46, 46); height: 30px; display: flex; 
+            style: "background-color: rgb(54, 46, 46); height: 30px; display: flex;
                     justify-content: space-between; align-items: center",
             Breadcrumbs {path},
-            div { 
+            div {
                 style: "height: 100%; width: 1px; background-color: rgb(90, 89, 75);",
             }
             div {
                 class: "save-button",
                 onclick: move |_| {
-                    tabs.write().get_current_file_mut().map(|file| file.save_to_file());
+                    if let Some(file) = tabs.write().get_current_file_mut() { file.save_to_file() }
                 },
-                
+
                 "Save"
             }
         }
@@ -375,13 +375,20 @@ pub fn BottomStatusBar(
             let s = min(start, end);
             let e = max(start, end);
             let len = e - s;
-            let words = f.rope.slice(s..=e).chars().tuple_windows().filter(|(a, b)| a.is_whitespace() && !b.is_whitespace()).count() + 1;
+            let words = f
+                .rope
+                .slice(s..=e)
+                .chars()
+                .tuple_windows()
+                .filter(|(a, b)| a.is_whitespace() && !b.is_whitespace())
+                .count()
+                + 1;
 
             format!("Selection: {len} chars, {words} words")
         } else if let Some(x) = f.dirty_changes {
             format!("{x} unsaved changes")
         } else {
-            format!("(no changes)")
+            "(no changes)".to_string()
         }
     } else {
         String::new()
@@ -389,14 +396,14 @@ pub fn BottomStatusBar(
 
     rsx! {
         div {
-            style: "background-color: rgb(40, 42, 53); height: 30px; display: flex; 
+            style: "background-color: rgb(40, 42, 53); height: 30px; display: flex;
                     justify-content: flex-end; align-items: center; color: rgb(198, 208, 235); 
                     font-family: JetBrains Mono; font-size: 14px;",
             span {
                 style: "margin-left: 10px;",
                 "{status}"
             }
-            
+
             div {
                 style: "flex: 1;",
             }

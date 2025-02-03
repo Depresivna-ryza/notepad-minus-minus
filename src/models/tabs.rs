@@ -10,7 +10,7 @@ pub struct Tab {
 
 impl Tab {
     pub fn new(file: TextFile) -> Self {
-        Self { file, exists: true}
+        Self { file, exists: true }
     }
 }
 
@@ -18,6 +18,12 @@ impl Tab {
 pub struct Tabs {
     pub opened_tabs: Vec<Tab>,
     pub current_file: Option<PathBuf>,
+}
+
+impl Default for Tabs {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Tabs {
@@ -29,17 +35,25 @@ impl Tabs {
     }
 
     pub fn get_current_file(&self) -> Option<TextFile> {
-        self.current_file.as_ref().and_then(|path| self.get_file(path))
+        self.current_file
+            .as_ref()
+            .and_then(|path| self.get_file(path))
     }
 
     pub fn get_current_file_mut(&mut self) -> Option<&mut TextFile> {
         self.current_file.as_ref().and_then(|path| {
-            self.opened_tabs.iter_mut().find(|file| &file.file.path == path).map(|file| &mut file.file)
+            self.opened_tabs
+                .iter_mut()
+                .find(|file| &file.file.path == path)
+                .map(|file| &mut file.file)
         })
     }
 
     pub fn get_file(&self, path: &PathBuf) -> Option<TextFile> {
-        self.opened_tabs.iter().find(|file| &file.file.path == path).map(|file| file.file.clone())
+        self.opened_tabs
+            .iter()
+            .find(|file| &file.file.path == path)
+            .map(|file| file.file.clone())
     }
 
     pub fn open_tab(&mut self, path: PathBuf) {
@@ -56,7 +70,10 @@ impl Tabs {
                 self.opened_tabs.remove(i);
                 self.current_file = match self.opened_tabs.len() {
                     0 => None,
-                    l => self.opened_tabs.get(min(i, l - 1)).map(|f| f.file.path.clone()),
+                    l => self
+                        .opened_tabs
+                        .get(min(i, l - 1))
+                        .map(|f| f.file.path.clone()),
                 };
 
                 break;
@@ -65,7 +82,13 @@ impl Tabs {
     }
 
     pub fn update_existance(&mut self, path: PathBuf, exists: bool) {
-        self.opened_tabs.iter_mut().find(|file| &file.file.path == &path).map(|file| file.exists = exists);
+        if let Some(x) = self
+            .opened_tabs
+            .iter_mut()
+            .find(|file| file.file.path == path)
+        {
+            x.exists = exists;
+        }
     }
 
     pub fn set_current_file(&mut self, path: PathBuf) {

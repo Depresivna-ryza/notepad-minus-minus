@@ -1,10 +1,7 @@
-use std::path::PathBuf;
-use dioxus::prelude::*;
 use crate::models::file_system::{Directory, FileSystem, FileSystemItem};
-use crate::views::file_explorer::{
-    file::File,
-    context_menu::{RightClickMenu, RightClickMenuHandler},
-};
+use crate::views::file_explorer::{context_menu::RightClickMenuHandler, file::File};
+use dioxus::prelude::*;
+use std::path::PathBuf;
 
 #[component]
 pub fn DirectoryComponent(path: PathBuf) -> Element {
@@ -24,7 +21,7 @@ pub fn DirectoryComponent(path: PathBuf) -> Element {
     };
 
     let open_close = {
-        let mut file_system = file_system.clone();
+        let mut file_system = file_system;
         let path = path.clone();
 
         move |_| {
@@ -33,7 +30,7 @@ pub fn DirectoryComponent(path: PathBuf) -> Element {
     };
 
     let change_focus = {
-        let mut file_system = file_system.clone();
+        let mut file_system = file_system;
         let path = path.clone();
 
         move |_| {
@@ -45,7 +42,9 @@ pub fn DirectoryComponent(path: PathBuf) -> Element {
         let path = path.clone();
 
         move |event: MouseEvent| {
-            right_click_menu_handler.write().set_fs_item(FileSystemItem::Directory(Directory::from(&path)));
+            right_click_menu_handler
+                .write()
+                .set_fs_item(FileSystemItem::Directory(Directory::from(&path)));
             right_click_menu_handler.write().handle_right_click(event);
             file_system.write().change_focus(&path);
         }
@@ -77,7 +76,7 @@ pub fn DirectoryComponent(path: PathBuf) -> Element {
                     for item in file_system.read().get_directory_children(&path).iter() {
                         if let FileSystemItem::Directory(dir) = item {
                             DirectoryComponent { path: dir.get_path().clone() }
-                            
+
                         }
                     }
 

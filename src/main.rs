@@ -1,23 +1,22 @@
 pub mod models;
 pub mod views;
 
-
-use std::rc::Rc;
 use dioxus::desktop::window;
-use models::file_system::{FileSystem, FileSystemItem};
+use models::file_system::FileSystem;
 use models::panels::ShownPanels;
 use models::tabs::Tabs;
+use std::rc::Rc;
 use tracing::info;
 use views::dialogs::fs_operations::OperationDialogHandler;
-use views::file_explorer::context_menu::{RightClickMenu, RightClickMenuHandler};
-use views::{edit_history::EditHistory, find_replace::FindReplace};
 use views::editor::Editor;
+use views::file_explorer::context_menu::{RightClickMenu, RightClickMenuHandler};
 use views::file_explorer::file_explorer::FileExplorer;
 use views::sessionexplorer::SessionsExplorer;
 use views::side_panel::SidePanel;
 use views::tabs::EditorTabs;
+use views::{edit_history::EditHistory, find_replace::FindReplace};
 
-use crate::views::dialogs::error::{ErrorDialogHandler, ErrorDialog};
+use crate::views::dialogs::error::{ErrorDialog, ErrorDialogHandler};
 
 use dioxus::prelude::*;
 use views::terminal::Terminal;
@@ -33,15 +32,16 @@ fn main() {
 
 #[component]
 pub fn Layout() -> Element {
-    let error_dialog_handler = use_context_provider(|| ErrorDialogHandler::new());
-    let right_click_menu_handler = use_context_provider(|| Signal::new(RightClickMenuHandler::new()));
+    let error_dialog_handler = use_context_provider(ErrorDialogHandler::new);
+    let right_click_menu_handler =
+        use_context_provider(|| Signal::new(RightClickMenuHandler::new()));
     let _ = use_context_provider(|| Signal::new(FileSystem::new()));
-    let _ = use_context_provider(|| OperationDialogHandler::new());
+    let _ = use_context_provider(OperationDialogHandler::new);
 
     let tabs = use_signal(Tabs::new);
 
     let shown_panels = ShownPanels::new();
-    
+
     let mut terminal_height = use_signal(|| 200);
     let mut left_panel_width = use_signal(|| 210);
 
@@ -126,12 +126,12 @@ pub fn Layout() -> Element {
                     div {
                         onmousedown: move |_| is_terminal_slider_pressed.set(true),
                         class: "terminal-slider",
-                    } 
+                    }
                     Terminal {}
                 }
             }
         }
-        
+
         if right_click_menu_handler.read().is_open() {
             if let Some(fs_item) = right_click_menu_handler.read().get_fs_item() {
                 RightClickMenu { fs_item }
