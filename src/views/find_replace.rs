@@ -31,7 +31,7 @@ pub fn FindReplace(tabs: Signal<Tabs>) -> Element {
             }
 
             div {  
-                style: "display: flex; flex-direction: row; width: 100%; justify-content: center; padding-top: 5px",
+                style: "display: flex; flex-direction: row; width: 100%; justify-content: center;",
 
                 input {
                     class: "custom-checkbox",
@@ -43,7 +43,7 @@ pub fn FindReplace(tabs: Signal<Tabs>) -> Element {
                 }
 
                 label {
-                    style: "margin-left: 5px;",
+                    style: "margin-left: 5px; font-weight: 100; font-size: 17px; text-align: center;",
                     "Case sensitive"
                 }
             }
