@@ -373,10 +373,11 @@ span {
 }
 
 .terminal-launcher-input input {
+    font-family: 'JetBrains Mono';
     margin-top: 10px;
     padding: 10px;
     border: 1px solid #555555;
-    border-radius: 5px;
+    /* border-radius: 5px; */
     width: 80%;
     max-width: 300px;
     background-color: #2e2e2e;
@@ -384,10 +385,11 @@ span {
 }
 
 .terminal-launcher-button {
+    font-family: 'JetBrains Mono';
     margin-top: 10px;
     padding: 10px 20px;
     border: none;
-    border-radius: 5px;
+    /* border-radius: 5px; */
     cursor: pointer;
     background-color: #3e3e3e;
     color: #ffffff;
