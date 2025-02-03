@@ -1,22 +1,19 @@
-use libp2p::{identity, PeerId};
+use std::time::Duration;
+
+use libp2p::{floodsub::Topic, identity, multiaddr::Protocol, Multiaddr, PeerId};
 use serde::{Deserialize, Serialize};
 
+use super::network::P2PNetwork;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct SessionInfo {
+pub struct Session {
     pub id: String,
     pub host_id: String,
     pub host_addr: String,
-    pub name: String,
-}
-
-#[derive(Debug, Clone)]
-pub struct Session {
-    pub info: SessionInfo,
+    topic: String,
     pub peers: Vec<PeerId>,
-    pub shared_file_name: String,
 }
 
-#[derive(Debug)]
 pub struct Sessions {
     pub local_key: identity::Keypair,
     pub peer_id: PeerId,
@@ -25,29 +22,20 @@ pub struct Sessions {
 }
 
 impl Session {
-    pub fn new(host_id: String, host_addr: String, name: String, file_name: String) -> Self {
-        let session_id = format!(
-            "{}",
-            host_id
-        );
+    pub fn new(host_id: String, host_addr: String, file_name: String) -> Self {
+        let session_id = host_id.to_string();
 
         Self {
-            info: SessionInfo {
-                id: session_id,
-                host_id,
-                host_addr,
-                name,
-            },
+            id: session_id,
+            host_id,
+            host_addr,
+            topic: file_name.clone(),
             peers: Vec::new(),
-            shared_file_name: file_name,
         }
     }
 
     pub fn generate_join_link(&self) -> String {
-        format!(
-            "notepad-minus-minus://join/{}/{}",
-            self.info.id, self.info.host_addr
-        )
+        format!("notepad-minus-minus://join/{}/{}", self.id, self.host_addr)
     }
 
     pub fn add_peer(&mut self, peer_id: PeerId) {
@@ -61,10 +49,57 @@ impl Session {
     }
 }
 
+impl Default for Sessions {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Sessions {
     pub fn new() -> Self {
         let local_key = identity::Keypair::generate_ed25519();
         let peer_id = PeerId::from(local_key.public());
+
+        if let Some(addr) = std::env::args().nth(1) {
+            if let Ok(mut network) = P2PNetwork::new(false) {
+                network
+                    .swarm
+                    .behaviour_mut()
+                    .subscribe(Topic::new("notepad"));
+                loop {
+                    let mut multiaddr = addr.parse::<Multiaddr>().unwrap();
+                    if let Protocol::P2p(peerId) = multiaddr.pop().expect("Valid peer Id") {
+                        match network.swarm.dial(multiaddr.clone()) {
+                            Ok(_) => {
+                                print!("Dial of {} succesfull.", multiaddr);
+                            }
+                            Err(dealError) => {
+                                print!("Dial of {} was with error {}.", multiaddr, dealError);
+                            }
+                        };
+
+                        println!("In addrr loop. Info {:?}", network.swarm.network_info());
+                        for peer in network.swarm.connected_peers() {
+                            println!("Connected peer {peer}");
+                        }
+                        std::thread::sleep(Duration::new(1, 0));
+                    };
+                }
+            };
+        } else if let Ok(mut network) = P2PNetwork::new(true) {
+            tokio::spawn(async move {
+                network
+                    .swarm
+                    .behaviour_mut()
+                    .subscribe(Topic::new("notepad"));
+                network.run().await;
+                network
+                    .swarm
+                    .behaviour_mut()
+                    .publish_any(Topic::new("notepad"), "zeds mi kokot");
+                std::thread::sleep(Duration::new(1, 0));
+            });
+        }
 
         Self {
             local_key,
@@ -74,11 +109,10 @@ impl Sessions {
         }
     }
 
-    pub fn create_session(&mut self, name: String, file_name: String) -> Session {
+    pub fn create_session(&mut self, file_name: String) -> Session {
         let session = Session::new(
             self.peer_id.to_string(),
             format!("/ip4/0.0.0.0/tcp/0/p2p/{}", self.peer_id),
-            name,
             file_name,
         );
         self.current_session = Some(session.clone());
@@ -86,13 +120,13 @@ impl Sessions {
         session
     }
 
-    pub fn join_session(&mut self, session_info: SessionInfo) {
-        let session = Session {
-            info: session_info,
-            peers: Vec::new(),
-            shared_file_name: String::new(), // Will be updated when receiving file from host
-        };
+    pub fn join_session(&mut self, connection_string: String) {
+        let session: Session = serde_json::from_str(&connection_string).unwrap();
         self.current_session = Some(session);
+        self.is_host = false;
+    }
+
+    pub fn join_session_from_addr(&mut self, addr: String) {
         self.is_host = false;
     }
 
