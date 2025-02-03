@@ -4,10 +4,12 @@ pub mod views;
 
 use std::rc::Rc;
 use dioxus::desktop::window;
+use models::file_system::{FileSystem, FileSystemItem};
 use models::panels::ShownPanels;
-use futures::FutureExt;
 use models::tabs::Tabs;
 use tracing::info;
+use views::dialogs::fs_operations::OperationDialogHandler;
+use views::file_explorer::context_menu::{RightClickMenu, RightClickMenuHandler};
 use views::{edit_history::EditHistory, find_replace::FindReplace};
 use views::editor::Editor;
 use views::file_explorer::file_explorer::FileExplorer;
@@ -22,6 +24,7 @@ use views::terminal::Terminal;
 
 const FAVICON: Asset = asset!("/assets/favicon.ico");
 const MAIN_CSS: Asset = asset!("/assets/main.css");
+const BOOTSTRAP_CSS: Asset = asset!("/assets/css/bootstrap.min.css");
 
 fn main() {
     // dotenv().ok();
@@ -31,13 +34,16 @@ fn main() {
 #[component]
 pub fn Layout() -> Element {
     let error_dialog_handler = use_context_provider(|| ErrorDialogHandler::new());
+    let right_click_menu_handler = use_context_provider(|| Signal::new(RightClickMenuHandler::new()));
+    let _ = use_context_provider(|| Signal::new(FileSystem::new()));
+    let _ = use_context_provider(|| OperationDialogHandler::new());
 
     let tabs = use_signal(Tabs::new);
 
     let shown_panels = ShownPanels::new();
     
     let mut terminal_height = use_signal(|| 200);
-    let mut left_panel_width = use_signal(|| 100);
+    let mut left_panel_width = use_signal(|| 200);
 
     let mut div_element = use_signal(|| None as Option<Rc<MountedData>>);
 
@@ -63,12 +69,12 @@ pub fn Layout() -> Element {
         if *is_left_panel_slider_pressed.read() {
             let mouse_width = event.page_coordinates().x as i32;
             let new_width = mouse_width - 50;
-            if (new_width) < 42 {
-                info!("Left panel too small");
+            if (new_width) < 200 {
+                // info!("Left panel too small");
                 return;
             }
             if (new_width) > 500 {
-                info!("Left panel too big");
+                // info!("Left panel too big");
                 return;
             }
             left_panel_width.set(new_width);
@@ -78,6 +84,7 @@ pub fn Layout() -> Element {
     rsx! {
         document::Link { rel: "icon", href: FAVICON }
         document::Link { rel: "stylesheet", href: MAIN_CSS }
+        document::Link { rel: "stylesheet", href: BOOTSTRAP_CSS }
 
         div {
             style: "display: flex; flex-direction: row; width: 100vw ; height: 100vh;",
@@ -107,7 +114,7 @@ pub fn Layout() -> Element {
                         }
                         div {
                             onmousedown: move |_| is_left_panel_slider_pressed.set(true),
-                            style: "border-right: 3px solid red; cursor: ew-resize",
+                            class: "left-panel-slider",
                         }
                     }
                     RightPanel {tabs}
@@ -118,14 +125,29 @@ pub fn Layout() -> Element {
                     hidden: !*shown_panels.terminal.read(),
                     div {
                         onmousedown: move |_| is_terminal_slider_pressed.set(true),
-                        style: "border-top: 3px solid red; cursor: ns-resize",
+                        class: "terminal-slider",
                     } 
                     Terminal {}
                 }
             }
         }
+        
+        if right_click_menu_handler.read().is_open() {
+            if let Some(fs_item) = right_click_menu_handler.read().get_fs_item() {
+                RightClickMenu { fs_item }
+            }
+        }
+
         if error_dialog_handler.is_shown() {
             ErrorDialog {}
+        }
+    }
+}
+#[component]
+pub fn Divider() -> Element {
+    rsx! {
+        div {
+            style: "display: flex; min-height: 3px; background-color: rgb(139, 139, 139); width: 100%;",
         }
     }
 }
@@ -134,29 +156,28 @@ pub fn Layout() -> Element {
 pub fn LeftPanel(tabs: Signal<Tabs>, width: Signal<i32>, shown_panels: ShownPanels) -> Element {
     rsx! {
         div {
-            class: "custom-scrollbar",
-            overflow_y: "auto",
-            overflow_x: "hidden",
-            display: "flex",
-            flex_direction: "column",
-            width: width.read().to_string() + "px",
+            class: "invisible-scrollbar left-panel",
+            style: "overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column; width: {width.read()}px;",
             div {
-                style: "display: flex; flex-direction: column; flex: 1;  overflow: hidden; min-height: 250px",
+                style: "display: flex; flex-direction: column; flex: 1; overflow: hidden; min-height: 250px;",
                 display: if !*shown_panels.file_tree.read() {"none"} else {"flex"},
                 FileExplorer {tabs}
+                Divider {}
             }
             div {
-                style: "display: flex;  flex: 1; min-height: 250px",
+                style: "display: flex; flex: 1; min-height: 250px; width: 100%; flex-direction: column;",
                 display: if !*shown_panels.sessions.read() {"none"} else {"flex"},
                 SessionsExplorer {}
+                Divider {}
             }
             div {
-                style: "display: flex; flex-direction: column; flex: 1; background-color: yellow; min-height: 250px",
+                style: "display: flex; flex-direction: column; flex: 1; background-color: yellow;",
                 display: if !*shown_panels.search.read() {"none"} else {"flex"},
-                FindReplace{ tabs }
+                FindReplace { tabs }
+                Divider {}
             }
             div {
-                style: "display: flex; flex-direction: column; flex: 1; max-height: 100%; overflow: hidden; min-height: 250px",
+                style: "display: flex; flex-direction: column; flex: 1; max-height: 100%; overflow: hidden; min-height: 250px;",
                 display: if !*shown_panels.history.read() {"none"} else {"flex"},
                 EditHistory {tabs}
             }

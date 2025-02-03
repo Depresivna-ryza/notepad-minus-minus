@@ -13,13 +13,15 @@ pub fn EditHistory(tabs: Signal<Tabs>) -> Element {
     let Some(ref file) = *f.read() else {
         return rsx! {
             div {
-                style: "flex: 1; background-color: orange; overflow-x: auto; overflow-y: auto;",
+                style: "flex: 1; background-color: rgb(124, 123, 65); overflow: hidden; 
+                        width: 100%; display: flex; color: white; justify-content: center; align-items: center; font-size: 20px; font-family: JetBrains Mono;",
                 div {
-                    style: "display: flex; justify-content: center; align-items: center;",
-                    "No file selected"
+                    style: "display: flex; justify-content: center; align-items: center; color: rgb(204, 204, 204)",
+                    "No file is selected"
                 }
             }
         }
+
     };
 
     let history = file.event_history.clone();
@@ -27,15 +29,30 @@ pub fn EditHistory(tabs: Signal<Tabs>) -> Element {
 
     rsx! {
         div {
-            style: "flex: 1; background-color: orange; overflow-x: auto; overflow-y: auto; display: flex; flex-direction: column;",
-            a {"History"}
-
-            for (i, event) in history.iter().enumerate().rev() {
-                HistoryLine {
-                    tabs: tabs, 
-                    ln: i,
-                    event: event.clone(), 
-                    current_history_idx: history_idx
+            style:"flex: 1; background-color: rgb(124, 123, 65); overflow: hidden; flex-direction: column;
+                   width: 100%; display: flex; color: white; justify-content: center; align-items: center; font-size: 20px; font-family: JetBrains Mono;",
+            div {
+                style: "display: flex; justify-content: center; align-items: center; width: 100%; padding: 7px",
+                "History"
+            }
+            div {
+                // divider
+                style: "height: 3px; background-color: rgba(105, 211, 238, 0.43); width: 100%;",
+            }
+            div {
+                style: "display: flex; flex-direction: column; width: 100%; 
+                        align-items: center; overflow-y: auto; flex: 1",
+                for (i, event) in history.iter().enumerate().rev() {
+                    HistoryLine {
+                        tabs: tabs, 
+                        ln: i,
+                        event: event.clone(), 
+                        current_history_idx: history_idx
+                    }
+                    div {  
+                        //divider
+                        style: "height: 1px; background-color: rgba(206, 206, 206, 0.35); width: 90%;",
+                    }
                 }
             }
 
@@ -48,9 +65,9 @@ pub fn HistoryLine(tabs: Signal<Tabs>, ln: usize, event: HistoryEvent, current_h
     let str = format!("{}", event);
     rsx! {
         div {
-            style: "border: 1px solid black; margin: 5px; ".to_string() + 
+            class: "history-item".to_string() + 
             match ln == current_history_idx {
-                true => "background-color: green",
+                true => " selected",
                 false => ""
             },
             onclick: move |_| {

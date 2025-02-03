@@ -1,3 +1,4 @@
+
 use std::path::PathBuf;
 
 use dioxus::prelude::*;
@@ -5,45 +6,59 @@ use crate::models::file_system::FileSystemItem;
 use crate::views::dialogs::fs_operations::{Operation, OperationDialogHandler};
 use crate::models::file_system::FileSystem;
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct RightClickMenuHandler {
-    is_open: Signal<bool>,
-    position: Signal<(f64, f64)>,
+    is_open: bool,
+    position: (f64, f64),
+    from_fs_item: Option<FileSystemItem>,
 }
 
 impl RightClickMenuHandler {
     pub fn new() -> Self {
         RightClickMenuHandler {
-            is_open: Signal::new(false),
-            position: Signal::new((0.0, 0.0)),
+            is_open: false,
+            position: (0.0, 0.0),
+            from_fs_item: None,
         }
     }
 
     pub fn handle_right_click(&mut self, event: MouseEvent) {
         event.prevent_default();
-        self.is_open.set(true);
+        self.is_open = true;
         let coordinates = event.client_coordinates();
-        self.position.set((coordinates.x, coordinates.y));
+        self.position = (coordinates.x, coordinates.y);
     }
     
     pub fn close_menu(&mut self) {
-        self.is_open.set(false);
+        self.is_open = false;
     }
 
     pub fn is_open(&self) -> bool {
-        return *self.is_open.read();
+        return self.is_open;
+    }
+
+    pub fn set_fs_item(&mut self, fs_item: FileSystemItem) {
+        self.from_fs_item = Some(fs_item);
+    }
+
+    pub fn get_fs_item(&self) -> Option<FileSystemItem> {
+        self.from_fs_item.clone()
+    }
+
+    pub fn get_posion(&self) -> (f64, f64) {
+        self.position
     }
 }
 
 #[component]
 pub fn RightClickMenu(fs_item: FileSystemItem) -> Element {
-    let mut right_click_menu_state = use_context::<RightClickMenuHandler>();
+    let mut right_click_menu_state = use_context::<Signal<RightClickMenuHandler>>();
     let mut focus_state = use_context::<Signal<FileSystem>>();
     let operation_dialog_handler = use_context::<OperationDialogHandler>();
 
     let mut button_pressed = use_signal(|| false);
 
-    let menu_position = right_click_menu_state.position.read();
+    let menu_position = right_click_menu_state.read().get_posion();
 
     let path = match fs_item {
         FileSystemItem::Directory(ref dir) => dir.get_path().clone(),
@@ -53,55 +68,60 @@ pub fn RightClickMenu(fs_item: FileSystemItem) -> Element {
     let create_directory = {
         let path = path.clone();
         let mut operation_dialog_handler = operation_dialog_handler.clone();
+        let mut right_click_menu_state = right_click_menu_state.clone();
 
         move |_| {
             operation_dialog_handler.set_operation(Operation::CreateDirectory);
             operation_dialog_handler.set_path(path.clone());
-            right_click_menu_state.close_menu();
+            right_click_menu_state.write().close_menu();
         }
     };
 
     let create_file = {
         let path = path.clone();
         let mut operation_dialog_handler = operation_dialog_handler.clone();
+        let mut right_click_menu_state = right_click_menu_state.clone();
 
         move |_| {
             operation_dialog_handler.set_operation(Operation::CreateFile);
             operation_dialog_handler.set_path(path.clone());
-            right_click_menu_state.close_menu();
+            right_click_menu_state.write().close_menu();
         }
     };
 
     let delete_dir = {
         let path = path.clone();
         let mut operation_dialog_handler = operation_dialog_handler.clone();
+        let mut right_click_menu_state = right_click_menu_state.clone();
 
         move |_| {
             operation_dialog_handler.set_operation(Operation::DeleteDirectory);
             operation_dialog_handler.set_path(path.clone());
-            right_click_menu_state.close_menu();
+            right_click_menu_state.write().close_menu();
         }
     };
 
     let delete_file = {
         let path = path.clone();
         let mut operation_dialog_handler = operation_dialog_handler.clone();
+        let mut right_click_menu_state = right_click_menu_state.clone();
 
         move |_| {
             operation_dialog_handler.set_operation(Operation::DeleteFile);
             operation_dialog_handler.set_path(path.clone());
-            right_click_menu_state.close_menu();
+            right_click_menu_state.write().close_menu();
         }
     };
 
     let rename = {
         let path = path.clone();
         let mut operation_dialog_handler = operation_dialog_handler.clone();
+        let mut right_click_menu_state = right_click_menu_state.clone();
 
         move |_| {
             operation_dialog_handler.set_operation(Operation::Rename);
             operation_dialog_handler.set_path(path.clone());
-            right_click_menu_state.close_menu();
+            right_click_menu_state.write().close_menu();
         }
     };
 
@@ -114,63 +134,54 @@ pub fn RightClickMenu(fs_item: FileSystemItem) -> Element {
                 left: {menu_position.0}px;
             ",
             
-            onmounted: move |e| {
-                e.data().as_ref().set_focus(true);
+            onmounted: move |e| async move {
+                let _ = e.data().as_ref().set_focus(true).await;
             },
 
             onfocusout: move |_| {
                 if *button_pressed.read() {
                     button_pressed.set(false);
                 } else {
-                    right_click_menu_state.close_menu();
+                    right_click_menu_state.write().close_menu();
                     focus_state.write().clear_focus();
                 }
             },
-            
+
             div {
+                class: "dialog-content",
                 onmousedown: move |_| button_pressed.set(true),
 
                 match fs_item {
                     FileSystemItem::Directory(_) => rsx!(
-                        p { 
-                            button { 
-                                class: "option-button",
-                                onclick: create_directory,
-                                "Create new directory", 
-                            } 
-                        }
-                        p { 
-                            button { 
-                                class: "option-button",
-                                onclick: create_file,
-                                "Create new file" 
-                            } 
-                        }
-                        p { 
-                            button { 
-                                class: "option-button",
-                                onclick: delete_dir,
-                                "Delete" 
-                            } 
-                        }
+                        div { 
+                            class: "option-button",
+                            onclick: create_directory,
+                            "Create new directory", 
+                        } 
+                        div { 
+                            class: "option-button",
+                            onclick: create_file,
+                            "Create new file" 
+                        } 
+                        div { 
+                            class: "option-button",
+                            onclick: delete_dir,
+                            "Delete" 
+                        } 
                     ),
                     FileSystemItem::File(_) => rsx!(
-                        p {
-                            button {
-                                class: "option-button",
-                                onclick: delete_file,
-                                "Delete"
-                            }
+                        div {
+                            class: "option-button",
+                            onclick: delete_file,
+                            "Delete"
                         }
                     ),
                 }
-                p { 
-                    button { 
-                        class: "option-button",
-                        onclick: rename,
-                        "Rename" 
-                    } 
-                }
+                div {
+                    class: "option-button",
+                    onclick: rename,
+                    "Rename" 
+                } 
             }
         }
     )
