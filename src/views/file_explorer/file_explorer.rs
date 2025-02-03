@@ -48,13 +48,13 @@ pub fn FileExplorer(tabs: Signal<Tabs>) -> Element {
                 if let Some(directory) = file_system.read().get_root() {
                     DirectoryComponent { path: directory.get_path().clone() }
                 } else {
-                        div {
-                            style: "width: 100%; height: 100%; display: flex; justify-content: center; align-items: center;",
-                            "No directory selected"
-                        }
+                    div {
+                        style: "width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; color: rgb(175, 175, 175)",
+                        "No directory selected"
                     }
                 }
             }
+        }
         
         if operation_dialog_handler.is_operation_set() {
             OperationDialog {}

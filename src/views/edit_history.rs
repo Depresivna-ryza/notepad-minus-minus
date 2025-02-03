@@ -16,8 +16,8 @@ pub fn EditHistory(tabs: Signal<Tabs>) -> Element {
                 style: "flex: 1; background-color: rgb(124, 123, 65); overflow: hidden; 
                         width: 100%; display: flex; color: white; justify-content: center; align-items: center; font-size: 20px; font-family: JetBrains Mono;",
                 div {
-                    style: "display: flex; justify-content: center; align-items: center;",
-                    "No file selected"
+                    style: "display: flex; justify-content: center; align-items: center; color: rgb(204, 204, 204)",
+                    "No file is selected"
                 }
             }
         }
