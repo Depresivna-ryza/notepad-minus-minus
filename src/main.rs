@@ -20,6 +20,7 @@ use views::terminal::Terminal;
 
 const FAVICON: Asset = asset!("/assets/favicon.ico");
 const MAIN_CSS: Asset = asset!("/assets/main.css");
+const BOOTSTRAP_CSS: Asset = asset!("/assets/css/bootstrap.min.css");
 
 fn main() {
     // dotenv().ok();
@@ -75,6 +76,7 @@ pub fn Layout() -> Element {
     rsx! {
         document::Link { rel: "icon", href: FAVICON }
         document::Link { rel: "stylesheet", href: MAIN_CSS }
+        document::Link { rel: "stylesheet", href: BOOTSTRAP_CSS }
 
         div {
             style: "display: flex; flex-direction: row; width: 100vw ; height: 100vh;",
@@ -104,7 +106,7 @@ pub fn Layout() -> Element {
                         }
                         div {
                             onmousedown: move |_| is_left_panel_slider_pressed.set(true),
-                            style: "border-right: 3px solid red; cursor: ew-resize",
+                            class: "left-panel-slider",
                         }
                     }
                     RightPanel {tabs}
@@ -115,7 +117,7 @@ pub fn Layout() -> Element {
                     hidden: !*shown_panels.terminal.read(),
                     div {
                         onmousedown: move |_| is_terminal_slider_pressed.set(true),
-                        style: "border-top: 3px solid red; cursor: ns-resize",
+                        class: "terminal-slider",
                     } 
                     Terminal {}
                 }
