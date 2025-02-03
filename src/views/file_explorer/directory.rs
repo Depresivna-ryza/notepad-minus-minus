@@ -50,14 +50,6 @@ pub fn DirectoryComponent(path: PathBuf) -> Element {
         }
     };
 
-    let style = {
-        if file_system.read().directory_is_opened(&path) {
-            "border-left: 1px solid grey; "
-        } else {
-            ""
-        }
-    };
-
     rsx!(
         div {
             class: "item-text",

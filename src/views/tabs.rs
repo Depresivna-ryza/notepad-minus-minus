@@ -1,8 +1,6 @@
-use std::path::PathBuf;
 
-use dioxus::{desktop::muda::Icon, html::g::strikethrough_thickness, prelude::*};
+use dioxus::prelude::*;
 use dioxus_heroicons::{mini::Shape, Icon};
-use tracing::info;
 
 use crate::models::tabs::{Tabs, Tab};
 

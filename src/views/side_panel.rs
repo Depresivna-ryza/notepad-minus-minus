@@ -1,4 +1,4 @@
-use dioxus::{html::select, prelude::*};
+use dioxus::prelude::*;
 use dioxus_heroicons::{mini::Shape, Icon};
 
 use crate::models::panels::ShownPanels;

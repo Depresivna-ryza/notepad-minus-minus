@@ -1,4 +1,3 @@
-use std::path::PathBuf;
 
 use dioxus::prelude::*;
 use crate::models::file_system::FileSystemItem;
@@ -114,8 +113,8 @@ pub fn RightClickMenu(fs_item: FileSystemItem) -> Element {
                 left: {menu_position.0}px;
             ",
             
-            onmounted: move |e| {
-                e.data().as_ref().set_focus(true);
+            onmounted: move |e| async move {
+                let _ = e.data().as_ref().set_focus(true).await;
             },
 
             onfocusout: move |_| {
