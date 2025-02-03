@@ -7,7 +7,7 @@ use dioxus_heroicons::{mini::Shape, Icon};
 
 #[component]
 pub fn File(file: PathBuf) -> Element {
-    let mut right_click_menu_handler = use_context_provider(|| RightClickMenuHandler::new());
+    let mut right_click_menu_handler = use_context::<Signal<RightClickMenuHandler>>();
     let mut file_system = use_context::<Signal<FileSystem>>();
 
     let file_name = file.file_name().unwrap().to_str().unwrap();
@@ -33,7 +33,8 @@ pub fn File(file: PathBuf) -> Element {
         let file = file.clone();
 
         move |event: MouseEvent| {
-            right_click_menu_handler.handle_right_click(event);
+            right_click_menu_handler.write().set_fs_item(FileSystemItem::File(file.clone()));
+            right_click_menu_handler.write().handle_right_click(event);
             file_system.write().change_focus(&file);
         }
     };
@@ -58,10 +59,6 @@ pub fn File(file: PathBuf) -> Element {
             span {
                 " {file_name}"
             }
-        }
-        
-        if right_click_menu_handler.is_open() {
-            RightClickMenu { fs_item: FileSystemItem::File(file.clone()) }
         }
     )
 }
