@@ -4,9 +4,12 @@ pub mod views;
 
 use std::rc::Rc;
 use dioxus::desktop::window;
+use models::file_system::{FileSystem, FileSystemItem};
 use models::panels::ShownPanels;
 use models::tabs::Tabs;
 use tracing::info;
+use views::dialogs::fs_operations::OperationDialogHandler;
+use views::file_explorer::context_menu::{RightClickMenu, RightClickMenuHandler};
 use views::{edit_history::EditHistory, find_replace::FindReplace};
 use views::editor::Editor;
 use views::file_explorer::file_explorer::FileExplorer;
@@ -31,6 +34,9 @@ fn main() {
 #[component]
 pub fn Layout() -> Element {
     let error_dialog_handler = use_context_provider(|| ErrorDialogHandler::new());
+    let right_click_menu_handler = use_context_provider(|| Signal::new(RightClickMenuHandler::new()));
+    let mut file_system = use_context_provider(|| Signal::new(FileSystem::new()));
+    let operation_dialog_handler = use_context_provider(|| OperationDialogHandler::new());
 
     let tabs = use_signal(Tabs::new);
 
@@ -125,6 +131,13 @@ pub fn Layout() -> Element {
                 }
             }
         }
+        
+        if right_click_menu_handler.read().is_open() {
+            if let Some(fs_item) = right_click_menu_handler.read().get_fs_item() {
+                RightClickMenu { fs_item }
+            }
+        }
+
         if error_dialog_handler.is_shown() {
             ErrorDialog {}
         }
