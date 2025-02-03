@@ -149,20 +149,20 @@ pub fn LeftPanel(tabs: Signal<Tabs>, width: Signal<i32>, shown_panels: ShownPane
                 style: "display: flex; flex-direction: column; flex: 1; overflow: hidden; min-height: 250px;",
                 display: if !*shown_panels.file_tree.read() {"none"} else {"flex"},
                 FileExplorer {tabs}
+                Divider {}
             }
-            Divider {}
             div {
-                style: "display: flex; flex: 1; min-height: 250px;",
+                style: "display: flex; flex: 1; min-height: 250px; width: 100%; flex-direction: column;",
                 display: if !*shown_panels.sessions.read() {"none"} else {"flex"},
                 SessionsExplorer {}
+                Divider {}
             }
-            Divider {}
             div {
                 style: "display: flex; flex-direction: column; flex: 1; background-color: yellow;",
                 display: if !*shown_panels.search.read() {"none"} else {"flex"},
                 FindReplace { tabs }
+                Divider {}
             }
-            Divider {}
             div {
                 style: "display: flex; flex-direction: column; flex: 1; max-height: 100%; overflow: hidden; min-height: 250px;",
                 display: if !*shown_panels.history.read() {"none"} else {"flex"},
