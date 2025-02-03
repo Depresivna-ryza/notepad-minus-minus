@@ -434,6 +434,48 @@ impl TextFile {
         }
     }
 
+    pub fn find_and_select(&mut self, start: usize, mut needle: String, reverse: bool, case_sensitive: bool) -> Option<usize> {
+        let mut s = match reverse {
+            true => self.rope.slice(..=start).to_string().chars().rev().collect(),
+            false => self.rope.slice(start..).to_string(),
+        };
+
+        if !case_sensitive {
+            s = s.to_lowercase();
+            needle = needle.to_lowercase();
+        }
+
+        if reverse {
+            needle = needle.chars().rev().collect();
+        }
+
+        let idx = s.find(&needle);
+
+        match (idx, reverse) {
+            (Some(i), false) => {
+                let start_idx = start + i;
+                let end_idx = start_idx + needle.len();
+                self.selection = Some((start_idx, end_idx - 1));
+                self.char_idx = start_idx;
+                Some(start_idx)
+            }
+
+            (Some(i), true) => {
+                let start_idx = start + 1 - i - needle.len() ;
+                let end_idx = start_idx + needle.len();
+
+                self.selection = Some((start_idx, end_idx - 1));
+                self.char_idx = start_idx;
+                Some(start_idx)
+            }
+
+            (None, _) => {
+                self.clear_selection();
+                None
+            }
+        }
+    }
+
     pub fn apply_new_event(&mut self, event: HistoryEvent) {
         self.event_history.truncate(self.history_idx);
 

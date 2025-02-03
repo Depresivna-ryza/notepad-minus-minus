@@ -76,8 +76,28 @@ span {
 }
 
 .item-text.selected {
-    color: red; 
+    color: rgb(255, 81, 81); 
 }
+
+.file-text {
+    display: flex;
+    padding: 5px 0;
+    color: indianred;
+    margin: 0px 0px 0px 20px;
+    align-items: center;
+    font-size: 15px;
+    transition: background-color 0.3s ease, color 0.3s ease; /* Smooth transition for background color and color */
+}
+
+.file-text:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    cursor: pointer;
+}
+
+.file-text.selected {
+    color: rgb(255, 81, 81);
+}
+
 
 .right-click-menu {
     position: absolute;
@@ -122,34 +142,10 @@ span {
     gap: 10px;
 }
 
-/* WebKit-based browsers */
-.custom-scrollbar::-webkit-scrollbar {
-    width: 8px; /* Width of the scrollbar */
-}
-
-.custom-scrollbar::-webkit-scrollbar-track {
-    background: #f1f1f1; /* Background of the scrollbar track */
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb {
-    background: #888; /* Color of the scrollbar thumb */
-    border-radius: 10px; /* Rounded corners for the scrollbar thumb */
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: #555; /* Color of the scrollbar thumb on hover */
-}
-
-/* Firefox */
-.custom-scrollbar {
-    scrollbar-width: thin; /* Make the scrollbar thin */
-    scrollbar-color: #888 #f1f1f1; /* Color of the scrollbar thumb and track */
-}
 
 .left-panel-slider, .terminal-slider {
     right: 0;
-    opacity: 0;
-    background: #0099e5;
+    background: #2e2e2e;
     transition: 0.3s ease-in-out 0s, opacity 0.3s ease-in-out 0s;
 }
 
@@ -164,8 +160,8 @@ span {
 }
 
 .left-panel-slider:hover, .terminal-slider:hover {
-    opacity: 1;
-  transition: 0.3s ease-in-out 0s, opacity 0.3s ease-in-out .3s;
+    background: #00ffea;
+    transition: 0.3s ease-in-out 0s, opacity 0.3s ease-in-out .3s;
 }
 
 
@@ -278,6 +274,128 @@ span {
 .tab.non-exists {
     text-decoration: line-through; /* Cross out text */
     color: rgba(255, 0, 0, 0.7); /* Red color for deleted files */
+}
+
+.custom-checkbox {
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    background-color: #1e1e1e;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    position: relative;
+}
+
+.custom-checkbox:checked::before {
+    content: "✔";
+    color: white;
+    font-size: 16px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.custom-button {
+    padding: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 15px;
+    flex: 1;
+    background-color: #1e1e1e;
+    color: white;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.custom-button:hover {
+    background-color: #2e2e2e; /* Slightly lighter background on hover */
+}
+
+.custom-button:active {
+    background-color: #3e3e3e; /* Even lighter background on click */
+}
+
+.history-item {
+    display: flex;
+    justify-content: center;
+    padding: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+    width: 100%;
+
+    transition: background-color 0.3s ease;
+}
+
+.history-item:hover {
+    background-color: rgba(255, 255, 255, 0.192);
+}
+
+.history-item.selected {
+    background-color: rgba(129, 255, 56, 0.1);
+}
+
+.invisible-scrollbar::-webkit-scrollbar {
+    width: 100px; 
+    background: transparent; 
+}
+
+/* Hide scrollbar for Firefox */
+.invisible-scrollbar {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+/* Ensure the content is scrollable */
+.invisible-scrollbar {
+    overflow: auto; /* Enable scrolling */
+    position: relative; /* Ensure the scrollbar overlaps the content */
+}
+
+.left-panel {
+    white-space: nowrap; 
+    overflow: hidden; 
+    text-overflow: ellipsis;
+}
+
+/* Terminal launcher styles */
+.terminal-launcher-input {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    width: 100%;
+    background-color: #1e1e1e;
+    color: #ffffff;
+}
+
+.terminal-launcher-input input {
+    margin-top: 10px;
+    padding: 10px;
+    border: 1px solid #555555;
+    border-radius: 5px;
+    width: 80%;
+    max-width: 300px;
+    background-color: #2e2e2e;
+    color: #ffffff;
+}
+
+.terminal-launcher-button {
+    margin-top: 10px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    background-color: #3e3e3e;
+    color: #ffffff;
+    transition: background-color 0.3s ease;
+}
+
+.terminal-launcher-button:hover {
+    background-color: #4e4e4e;
 }
 
 @font-face {

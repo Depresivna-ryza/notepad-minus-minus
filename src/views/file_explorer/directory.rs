@@ -50,6 +50,14 @@ pub fn DirectoryComponent(path: PathBuf) -> Element {
         }
     };
 
+    let style = {
+        if file_system.read().directory_is_opened(&path) {
+            "border-left: 1px solid grey; "
+        } else {
+            ""
+        }
+    };
+
     rsx!(
         div {
             class: "item-text",
@@ -74,7 +82,7 @@ pub fn DirectoryComponent(path: PathBuf) -> Element {
                 RightClickMenu { fs_item: FileSystemItem::Directory(Directory::from(&path.clone())) }
             }
             div {
-                style: " border-left: 1px solid red; margin-left: 10px; ",
+                style: " border-left: 1px solid rgb(131, 58, 58); margin-left: 10px; ",
                 if file_system.read().directory_is_opened(&path) {
                     for item in file_system.read().get_directory_children(&path).iter() {
                         if let FileSystemItem::Directory(dir) = item {

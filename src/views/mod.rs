@@ -6,3 +6,4 @@ pub mod side_panel;
 pub mod terminal;
 pub mod edit_history;
 pub mod dialogs;
+pub mod find_replace;

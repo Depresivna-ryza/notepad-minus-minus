@@ -6,7 +6,7 @@ use dioxus::desktop::window;
 use models::panels::ShownPanels;
 use models::tabs::Tabs;
 use tracing::info;
-use views::edit_history::EditHistory;
+use views::{edit_history::EditHistory, find_replace::FindReplace};
 use views::editor::Editor;
 use views::file_explorer::file_explorer::FileExplorer;
 use views::sessionexplorer::SessionsExplorer;
@@ -35,7 +35,7 @@ pub fn Layout() -> Element {
     let shown_panels = ShownPanels::new();
     
     let mut terminal_height = use_signal(|| 200);
-    let mut left_panel_width = use_signal(|| 100);
+    let mut left_panel_width = use_signal(|| 200);
 
     let mut div_element = use_signal(|| None as Option<Rc<MountedData>>);
 
@@ -61,12 +61,12 @@ pub fn Layout() -> Element {
         if *is_left_panel_slider_pressed.read() {
             let mouse_width = event.page_coordinates().x as i32;
             let new_width = mouse_width - 50;
-            if (new_width) < 42 {
-                info!("Left panel too small");
+            if (new_width) < 200 {
+                // info!("Left panel too small");
                 return;
             }
             if (new_width) > 500 {
-                info!("Left panel too big");
+                // info!("Left panel too big");
                 return;
             }
             left_panel_width.set(new_width);
@@ -128,38 +128,41 @@ pub fn Layout() -> Element {
         }
     }
 }
+#[component]
+pub fn Divider() -> Element {
+    rsx! {
+        div {
+            style: "display: flex; min-height: 3px; background-color: rgb(139, 139, 139); width: 100%;",
+        }
+    }
+}
 
 #[component]
 pub fn LeftPanel(tabs: Signal<Tabs>, width: Signal<i32>, shown_panels: ShownPanels) -> Element {
     rsx! {
         div {
-            class: "custom-scrollbar",
-            overflow_y: "auto",
-            overflow_x: "hidden",
-            display: "flex",
-            flex_direction: "column",
-            width: width.read().to_string() + "px",
+            class: "invisible-scrollbar left-panel",
+            style: "overflow-y: auto; overflow-x: hidden; display: flex; flex-direction: column; width: {width.read()}px;",
             div {
-                style: "display: flex; flex-direction: column; flex: 1;  overflow: hidden; min-height: 250px",
+                style: "display: flex; flex-direction: column; flex: 1; overflow: hidden; min-height: 250px;",
                 display: if !*shown_panels.file_tree.read() {"none"} else {"flex"},
                 FileExplorer {tabs}
             }
+            Divider {}
             div {
-                style: "display: flex;  flex: 1; min-height: 250px",
+                style: "display: flex; flex: 1; min-height: 250px;",
                 display: if !*shown_panels.sessions.read() {"none"} else {"flex"},
                 SessionsExplorer {}
             }
+            Divider {}
             div {
-                style: "display: flex; flex-direction: column; flex: 1; background-color: yellow; min-height: 250px",
+                style: "display: flex; flex-direction: column; flex: 1; background-color: yellow;",
                 display: if !*shown_panels.search.read() {"none"} else {"flex"},
-                input {
-                    style: "",
-                    type: "text",
-                    placeholder: "Search",
-                }
+                FindReplace { tabs }
             }
+            Divider {}
             div {
-                style: "display: flex; flex-direction: column; flex: 1; max-height: 100%; overflow: hidden; min-height: 250px",
+                style: "display: flex; flex-direction: column; flex: 1; max-height: 100%; overflow: hidden; min-height: 250px;",
                 display: if !*shown_panels.history.read() {"none"} else {"flex"},
                 EditHistory {tabs}
             }
