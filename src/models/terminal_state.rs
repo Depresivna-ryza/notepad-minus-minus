@@ -1,29 +1,17 @@
 use uuid::Uuid;
 
-
 #[derive(Debug, Clone)]
 pub struct TerminalData {
     pub command: String,
-    pub id : Uuid,
+    pub id: Uuid,
 }
 
-#[derive(Debug, Clone)]
-pub struct TerminalStates{
+#[derive(Debug, Clone, Default)]
+pub struct TerminalStates {
     pub states: Vec<TerminalData>,
     pub active_index: Option<usize>,
     pub buffers: Vec<String>,
     pub input_texts: Vec<String>,
-}
-
-impl Default for TerminalStates {
-    fn default() -> Self {
-        Self {
-            states: vec![],
-            active_index: None,
-            buffers: vec![],
-            input_texts: vec![],
-        }
-    }
 }
 
 impl TerminalStates {
@@ -38,16 +26,16 @@ impl TerminalStates {
         self.buffers.remove(index);
         self.input_texts.remove(index);
 
-        if self.active_index.clone() == Some(index) {
+        if self.active_index == Some(index) {
             self.active_index = None;
         }
 
-        let Some(active_i) = self.active_index.clone() else {
+        let Some(active_i) = self.active_index else {
             return;
         };
 
         if active_i > index {
-            self.active_index = Some(active_i - 1); 
+            self.active_index = Some(active_i - 1);
         } else if active_i == index && active_i == self.len() {
             self.active_index = None;
         }
@@ -56,13 +44,17 @@ impl TerminalStates {
     pub fn len(&self) -> usize {
         self.states.len()
     }
+
+    pub fn is_empty(&self) -> bool {
+        self.states.is_empty()
+    }
 }
 
 impl TerminalData {
     pub fn new(command: String) -> Self {
         Self {
             command,
-            id: Uuid::new_v4()
+            id: Uuid::new_v4(),
         }
     }
 }

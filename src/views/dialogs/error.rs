@@ -6,6 +6,12 @@ pub struct ErrorDialogHandler {
     message: Signal<Option<String>>,
 }
 
+impl Default for ErrorDialogHandler {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ErrorDialogHandler {
     pub fn new() -> Self {
         Self {
@@ -20,7 +26,7 @@ impl ErrorDialogHandler {
     }
 
     pub fn get_message(&self) -> String {
-        self.message.read().clone().unwrap_or_else(|| String::new())
+        self.message.read().clone().unwrap_or_default()
     }
 
     pub fn is_shown(&self) -> bool {
@@ -52,7 +58,7 @@ pub fn ErrorDialog() -> Element {
                     class: "dialog-content",
                     p { "An error occurred." }
                     p { { error_dialog_handler.get_message() } }
-                    div { 
+                    div {
                         class: "dialog-button",
                         onclick: close,
                         "Close"

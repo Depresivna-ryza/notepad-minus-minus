@@ -8,10 +8,7 @@ use libp2p::{
 use std::{collections::HashSet, error::Error};
 use tracing::info;
 
-/// P2PNetwork handles libp2p networking logic.
-
 pub struct P2PNetwork {
-    // local_peer_id: PeerId,
     pub swarm: Swarm<Floodsub>,
     discovered_peers: HashSet<PeerId>,
 }
@@ -92,11 +89,11 @@ impl P2PNetwork {
                 SwarmEvent::Behaviour(FloodsubEvent::Message(message)) => {
                     println!("Received message: {:?}", message);
                 }
-                SwarmEvent::Behaviour(FloodsubEvent::Subscribed { peer_id, topic: _,}) => {
+                SwarmEvent::Behaviour(FloodsubEvent::Subscribed { peer_id, topic: _ }) => {
                     self.discovered_peers.insert(peer_id);
                     println!("Connected to peer: {peer_id}");
                 }
-                SwarmEvent::Behaviour(FloodsubEvent::Unsubscribed { peer_id, topic: _,}) => {
+                SwarmEvent::Behaviour(FloodsubEvent::Unsubscribed { peer_id, topic: _ }) => {
                     self.discovered_peers.remove(&peer_id);
                     println!("Disconnected from peer: {peer_id}");
                 }

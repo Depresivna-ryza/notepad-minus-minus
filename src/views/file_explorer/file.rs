@@ -1,9 +1,9 @@
-use dioxus::prelude::*;
-use std::path::PathBuf;
-use crate::models::file_system::{FileSystemItem, FileSystem};
-use crate::views::file_explorer::context_menu::{RightClickMenuHandler, RightClickMenu};
+use crate::models::file_system::{FileSystem, FileSystemItem};
 use crate::models::tabs::Tabs;
+use crate::views::file_explorer::context_menu::RightClickMenuHandler;
+use dioxus::prelude::*;
 use dioxus_heroicons::{mini::Shape, Icon};
+use std::path::PathBuf;
 
 #[component]
 pub fn File(file: PathBuf) -> Element {
@@ -33,7 +33,9 @@ pub fn File(file: PathBuf) -> Element {
         let file = file.clone();
 
         move |event: MouseEvent| {
-            right_click_menu_handler.write().set_fs_item(FileSystemItem::File(file.clone()));
+            right_click_menu_handler
+                .write()
+                .set_fs_item(FileSystemItem::File(file.clone()));
             right_click_menu_handler.write().handle_right_click(event);
             file_system.write().change_focus(&file);
         }
@@ -55,7 +57,7 @@ pub fn File(file: PathBuf) -> Element {
             Icon {
                 icon: Shape::Document,
             }
-            
+
             span {
                 " {file_name}"
             }

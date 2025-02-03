@@ -1,27 +1,30 @@
-use std::{cmp::{max, min}, fs::read_to_string, path::PathBuf};
+use std::{
+    cmp::{max, min},
+    fs::read_to_string,
+    path::PathBuf,
+};
 
 use super::historyevent::HistoryEvent;
 use ropey::Rope;
 
-
 #[derive(Debug, Clone, PartialEq, Copy)]
-pub struct Caret{
+pub struct Caret {
     pub ln: usize,
     pub col: usize,
 }
 
-impl Caret{
-    pub fn from(l: usize, c: usize) -> Self{
-        Self{
-            ln: l,
-            col: c,
-        }
+impl Default for Caret {
+    fn default() -> Self {
+        Self::new()
     }
-    pub fn new() -> Self{
-        Self{
-            ln: 0,
-            col: 0,
-        }
+}
+
+impl Caret {
+    pub fn from(l: usize, c: usize) -> Self {
+        Self { ln: l, col: c }
+    }
+    pub fn new() -> Self {
+        Self { ln: 0, col: 0 }
     }
 }
 
@@ -40,14 +43,17 @@ pub struct TextFile {
 
 impl TextFile {
     pub fn new(path: PathBuf) -> Self {
-        let mut content = read_to_string(&path).ok().unwrap_or(String::new()).replace("\r\n", "\n");
+        let mut content = read_to_string(&path)
+            .ok()
+            .unwrap_or_default()
+            .replace("\r\n", "\n");
 
         if !content.ends_with('\n') {
             content.push('\n');
         }
 
         Self {
-            path: path,
+            path,
             rope: Rope::from_str(&content),
             char_idx: 0,
             event_history: Vec::new(),
@@ -64,8 +70,7 @@ impl TextFile {
             Ok(_) => {
                 self.dirty_changes = None;
             }
-            Err(_e) => {
-            }
+            Err(_e) => {}
         }
     }
 
@@ -74,13 +79,16 @@ impl TextFile {
     }
 
     pub fn chars(&self) -> Vec<String> {
-        self.rope.lines().filter_map(|line| {
-            if line.len_chars() == 0 {
-                None
-            } else {
-                Some(line.to_string())
-            }
-        }).collect()
+        self.rope
+            .lines()
+            .filter_map(|line| {
+                if line.len_chars() == 0 {
+                    None
+                } else {
+                    Some(line.to_string())
+                }
+            })
+            .collect()
     }
 
     pub fn get_caret(&self) -> Caret {
@@ -95,7 +103,10 @@ impl TextFile {
             }
         }
 
-        Caret::from(self.rope.len_lines() - 1, self.rope.line(self.rope.len_lines() - 1).len_chars())
+        Caret::from(
+            self.rope.len_lines() - 1,
+            self.rope.line(self.rope.len_lines() - 1).len_chars(),
+        )
     }
 
     pub fn get_caret_from_idx(&self, idx: usize) -> Caret {
@@ -110,9 +121,11 @@ impl TextFile {
             }
         }
 
-        Caret::from(self.rope.len_lines() - 1, self.rope.line(self.rope.len_lines() - 1).len_chars())
+        Caret::from(
+            self.rope.len_lines() - 1,
+            self.rope.line(self.rope.len_lines() - 1).len_chars(),
+        )
     }
-
 
     pub fn get_char_idx(&self, caret: Caret) -> usize {
         let mut char_sum = 0;
@@ -122,9 +135,8 @@ impl TextFile {
             }
             char_sum += line.len_chars();
         }
-        
-        self.rope.len_chars() - 1
 
+        self.rope.len_chars() - 1
     }
 
     pub fn set_caret_position(&mut self, line: usize, column: usize, selection: bool) {
@@ -137,7 +149,7 @@ impl TextFile {
             self.clear_selection();
         }
     }
-    
+
     pub fn caret_move_left(&mut self, ctrl: bool) {
         match (ctrl, self.char_idx) {
             (_, 0) => {
@@ -153,11 +165,11 @@ impl TextFile {
 
                 // let mut skipped_whitespace = !self.rope.char(new_char_idx).is_ascii_whitespace();
 
-                // while new_char_idx > 0 && 
+                // while new_char_idx > 0 &&
                 //     self.rope.char(new_char_idx - 1) != '\n' &&
                 //     (self.rope.char(new_char_idx).is_ascii_alphanumeric() || !skipped_whitespace) &&
                 //     (self.rope.char(new_char_idx).is_ascii_whitespace() || skipped_whitespace) {
-                        
+
                 //     new_char_idx -= 1;
 
                 //     if !self.rope.char(new_char_idx).is_ascii_whitespace() {
@@ -188,31 +200,26 @@ impl TextFile {
                 self.char_idx = self.ctrl_idx_move(false);
             }
         }
-
-
     }
 
     fn ctrl_idx_move(&self, go_left: bool) -> usize {
         let mut idx = self.char_idx;
 
-        let mv = |i: usize| { 
-            match (go_left, i) {
-                (true, 0) => 0,
-                (false, i) if i + 1 >= self.rope.len_chars() => self.rope.len_chars() - 1,
-                (true, i) => i - 1,
-                (false, i) => i + 1,
-            }
+        let mv = |i: usize| match (go_left, i) {
+            (true, 0) => 0,
+            (false, i) if i + 1 >= self.rope.len_chars() => self.rope.len_chars() - 1,
+            (true, i) => i - 1,
+            (false, i) => i + 1,
         };
 
         let mut skipped_whitespace = !self.rope.char(idx).is_ascii_whitespace();
 
-        while idx != mv(idx) &&
-            self.rope.char(idx) != '\n' &&
-            (self.rope.char(idx).is_ascii_alphanumeric() || !skipped_whitespace) &&
-            (self.rope.char(idx).is_ascii_whitespace() || skipped_whitespace) &&
-            (!go_left || !skipped_whitespace || !self.rope.char(mv(idx)).is_ascii_whitespace())
-            {
-                
+        while idx != mv(idx)
+            && self.rope.char(idx) != '\n'
+            && (self.rope.char(idx).is_ascii_alphanumeric() || !skipped_whitespace)
+            && (self.rope.char(idx).is_ascii_whitespace() || skipped_whitespace)
+            && (!go_left || !skipped_whitespace || !self.rope.char(mv(idx)).is_ascii_whitespace())
+        {
             idx = mv(idx);
 
             if !self.rope.char(idx).is_ascii_whitespace() {
@@ -246,7 +253,8 @@ impl TextFile {
         if caret.col < next_line.len_chars() {
             self.char_idx += line.len_chars();
         } else {
-            self.char_idx = self.char_idx - caret.col + line.len_chars() + next_line.len_chars() - 1;
+            self.char_idx =
+                self.char_idx - caret.col + line.len_chars() + next_line.len_chars() - 1;
         }
     }
 
@@ -338,7 +346,10 @@ impl TextFile {
         }
 
         if !ctrl {
-            self.apply_new_event(HistoryEvent::RemoveChar(self.rope.char(self.char_idx - 1), self.char_idx - 1));
+            self.apply_new_event(HistoryEvent::RemoveChar(
+                self.rope.char(self.char_idx - 1),
+                self.char_idx - 1,
+            ));
             return;
         }
 
@@ -346,7 +357,12 @@ impl TextFile {
         self.char_idx -= 1;
         let start_of_deletion_idx = self.ctrl_idx_move(true);
 
-        self.apply_new_event(HistoryEvent::RemoveString(self.rope.slice(start_of_deletion_idx..end_of_deletion_idx).to_string(), start_of_deletion_idx));
+        self.apply_new_event(HistoryEvent::RemoveString(
+            self.rope
+                .slice(start_of_deletion_idx..end_of_deletion_idx)
+                .to_string(),
+            start_of_deletion_idx,
+        ));
     }
 
     pub fn delete(&mut self, ctrl: bool) {
@@ -360,7 +376,10 @@ impl TextFile {
         }
 
         if !ctrl {
-            self.apply_new_event(HistoryEvent::RemoveChar(self.rope.char(self.char_idx), self.char_idx));
+            self.apply_new_event(HistoryEvent::RemoveChar(
+                self.rope.char(self.char_idx),
+                self.char_idx,
+            ));
             return;
         }
 
@@ -368,16 +387,24 @@ impl TextFile {
         self.char_idx += 1;
         let end_of_deletion_idx = self.ctrl_idx_move(false);
 
-        self.apply_new_event(HistoryEvent::RemoveString(self.rope.slice(start_of_deletion_idx..end_of_deletion_idx).to_string(), start_of_deletion_idx));
+        self.apply_new_event(HistoryEvent::RemoveString(
+            self.rope
+                .slice(start_of_deletion_idx..end_of_deletion_idx)
+                .to_string(),
+            start_of_deletion_idx,
+        ));
     }
 
     pub fn cut_line(&mut self) -> String {
         let start_idx = self.rope.line_to_char(self.get_caret().ln);
         let end_idx = self.rope.line_to_char(self.get_caret().ln + 1);
         let res = self.rope.slice(start_idx..end_idx).to_string();
-        
-        self.apply_new_event(HistoryEvent::RemoveString(self.rope.slice(start_idx..end_idx).to_string(), start_idx));
-        
+
+        self.apply_new_event(HistoryEvent::RemoveString(
+            self.rope.slice(start_idx..end_idx).to_string(),
+            start_idx,
+        ));
+
         res
     }
 
@@ -390,9 +417,13 @@ impl TextFile {
         let end_idx = self.rope.line_to_char(self.get_caret().ln + 1);
         let line_offset = self.char_idx - start_idx;
 
-        let chars = self.rope.slice(start_idx..end_idx).chars().into_iter();
+        let chars = self.rope.slice(start_idx..end_idx).chars();
 
-        let shifted_line = chars.cycle().skip(line_offset).take(end_idx - start_idx).collect::<String>();
+        let shifted_line = chars
+            .cycle()
+            .skip(line_offset)
+            .take(end_idx - start_idx)
+            .collect::<String>();
 
         self.apply_new_event(HistoryEvent::AddString(shifted_line, self.char_idx));
 
@@ -432,9 +463,21 @@ impl TextFile {
         }
     }
 
-    pub fn find_and_select(&mut self, start: usize, mut needle: String, reverse: bool, case_sensitive: bool) -> Option<usize> {
+    pub fn find_and_select(
+        &mut self,
+        start: usize,
+        mut needle: String,
+        reverse: bool,
+        case_sensitive: bool,
+    ) -> Option<usize> {
         let mut s = match reverse {
-            true => self.rope.slice(..=start).to_string().chars().rev().collect(),
+            true => self
+                .rope
+                .slice(..=start)
+                .to_string()
+                .chars()
+                .rev()
+                .collect(),
             false => self.rope.slice(start..).to_string(),
         };
 
@@ -459,7 +502,7 @@ impl TextFile {
             }
 
             (Some(i), true) => {
-                let start_idx = start + 1 - i - needle.len() ;
+                let start_idx = start + 1 - i - needle.len();
                 let end_idx = start_idx + needle.len();
 
                 self.selection = Some((start_idx, end_idx - 1));
@@ -501,14 +544,12 @@ impl TextFile {
             return;
         };
 
-        let new_event : HistoryEvent;
+        let new_event: HistoryEvent;
 
-        match(last.clone(), new.clone()) {
-            (HistoryEvent::AddChar(c1, idx1), 
-             HistoryEvent::AddChar(c2, idx2)) 
-             if 
-             idx1 + 1== idx2 && 
-             c1.is_ascii_whitespace() == c2.is_ascii_whitespace() => {
+        match (last.clone(), new.clone()) {
+            (HistoryEvent::AddChar(c1, idx1), HistoryEvent::AddChar(c2, idx2))
+                if idx1 + 1 == idx2 && c1.is_ascii_whitespace() == c2.is_ascii_whitespace() =>
+            {
                 // self.event_history.pop();
                 // self.event_history.pop();
 
@@ -517,49 +558,49 @@ impl TextFile {
                 new_event = HistoryEvent::AddString(format!("{}{}", c1, c2), idx1);
             }
 
-            (HistoryEvent::AddString(s1, idx1), 
-            HistoryEvent::AddChar(c2, idx2)) 
-            if idx1 + s1.len() == idx2 && (
-            (c2.is_ascii_whitespace() && s1.chars().all(|c| c.is_ascii_whitespace())) ||
-            (!c2.is_ascii_whitespace() && s1.chars().all(|c| !c.is_ascii_whitespace()))) => {
+            (HistoryEvent::AddString(s1, idx1), HistoryEvent::AddChar(c2, idx2))
+                if idx1 + s1.len() == idx2
+                    && ((c2.is_ascii_whitespace()
+                        && s1.chars().all(|c| c.is_ascii_whitespace()))
+                        || (!c2.is_ascii_whitespace()
+                            && s1.chars().all(|c| !c.is_ascii_whitespace()))) =>
+            {
                 new_event = HistoryEvent::AddString(format!("{}{}", s1, c2), idx1);
             }
-            
 
-            (HistoryEvent::RemoveChar(c1, idx1), 
-             HistoryEvent::RemoveChar(c2, idx2)) 
-             if 
-             idx1 == idx2 + 1 && 
-             c1.is_ascii_whitespace() == c2.is_ascii_whitespace() => {
+            (HistoryEvent::RemoveChar(c1, idx1), HistoryEvent::RemoveChar(c2, idx2))
+                if idx1 == idx2 + 1 && c1.is_ascii_whitespace() == c2.is_ascii_whitespace() =>
+            {
                 new_event = HistoryEvent::RemoveString(format!("{}{}", c2, c1), idx2);
             }
 
-            (HistoryEvent::RemoveChar(c1, idx1), 
-            HistoryEvent::RemoveChar(c2, idx2)) 
-            if 
-            idx1 == idx2 && 
-            c1.is_ascii_whitespace() == c2.is_ascii_whitespace() => {
+            (HistoryEvent::RemoveChar(c1, idx1), HistoryEvent::RemoveChar(c2, idx2))
+                if idx1 == idx2 && c1.is_ascii_whitespace() == c2.is_ascii_whitespace() =>
+            {
                 new_event = HistoryEvent::RemoveString(format!("{}{}", c1, c2), idx2);
             }
 
-            (HistoryEvent::RemoveString(s1, idx1),
-            HistoryEvent::RemoveChar(c2, idx2))
-            if idx1 == idx2 + 1 && 
-            ((c2.is_ascii_whitespace() && s1.chars().all(|c| c.is_ascii_whitespace())) ||
-            (!c2.is_ascii_whitespace() && s1.chars().all(|c| !c.is_ascii_whitespace())))  => {
+            (HistoryEvent::RemoveString(s1, idx1), HistoryEvent::RemoveChar(c2, idx2))
+                if idx1 == idx2 + 1
+                    && ((c2.is_ascii_whitespace()
+                        && s1.chars().all(|c| c.is_ascii_whitespace()))
+                        || (!c2.is_ascii_whitespace()
+                            && s1.chars().all(|c| !c.is_ascii_whitespace()))) =>
+            {
                 new_event = HistoryEvent::RemoveString(format!("{}{}", c2, s1), idx2);
             }
 
-            (HistoryEvent::RemoveString(s1, idx1),
-            HistoryEvent::RemoveChar(c2, idx2))
-            if idx1 == idx2 && 
-            ((c2.is_ascii_whitespace() && s1.chars().all(|c| c.is_ascii_whitespace())) ||
-            (!c2.is_ascii_whitespace() && s1.chars().all(|c| !c.is_ascii_whitespace())))  => {
+            (HistoryEvent::RemoveString(s1, idx1), HistoryEvent::RemoveChar(c2, idx2))
+                if idx1 == idx2
+                    && ((c2.is_ascii_whitespace()
+                        && s1.chars().all(|c| c.is_ascii_whitespace()))
+                        || (!c2.is_ascii_whitespace()
+                            && s1.chars().all(|c| !c.is_ascii_whitespace()))) =>
+            {
                 new_event = HistoryEvent::RemoveString(format!("{}{}", s1, c2), idx2);
             }
 
-            _ => {return}
-
+            _ => return,
         }
 
         self.event_history.pop();
@@ -568,17 +609,22 @@ impl TextFile {
 
         self.history_idx -= 1;
 
-        self.dirty_changes = Some(self.dirty_changes.and_then(|d| d.checked_sub(1)).unwrap_or(0));
-            
+        self.dirty_changes = Some(
+            self.dirty_changes
+                .and_then(|d| d.checked_sub(1))
+                .unwrap_or(0),
+        );
     }
 
     pub fn delete_selection(&mut self) {
         if let Some((start, end)) = self.selection {
-
             let s = min(start, end);
-            let e = max(start, end); 
+            let e = max(start, end);
 
-            self.apply_new_event(HistoryEvent::RemoveString(self.rope.slice(s..e).to_string(), s));
+            self.apply_new_event(HistoryEvent::RemoveString(
+                self.rope.slice(s..e).to_string(),
+                s,
+            ));
 
             self.clear_selection();
         }
@@ -592,10 +638,10 @@ impl TextFile {
                 self.caret_move_right(false);
             }
             HistoryEvent::RemoveChar(_c, idx) => {
-                self.rope.remove(idx .. idx + 1);
+                self.rope.remove(idx..idx + 1);
                 self.char_idx = idx;
             }
-            HistoryEvent::AddString(s,idx) => {
+            HistoryEvent::AddString(s, idx) => {
                 self.rope.insert(idx, &s);
                 let new_idx = idx + s.len();
                 self.char_idx = new_idx;
@@ -612,17 +658,20 @@ impl TextFile {
                     (true, i) => i,
                     (false, i) => i - 1,
                 };
-        
+
                 let line_0 = self.rope.line_to_char(remove_caret_line);
                 let line_1 = self.rope.line_to_char(remove_caret_line + 1);
                 let line_2 = self.rope.line_to_char(remove_caret_line + 2);
-        
-                let removed_line_content = self.rope.slice(line_0..line_1).to_string();
-        
-                self.rope.remove(line_0..line_1);
-                self.rope.insert(line_2 - (line_1 - line_0), &removed_line_content);
 
-                self.char_idx = self.rope.line_to_char(if go_down {ln + 1} else {ln - 1});
+                let removed_line_content = self.rope.slice(line_0..line_1).to_string();
+
+                self.rope.remove(line_0..line_1);
+                self.rope
+                    .insert(line_2 - (line_1 - line_0), &removed_line_content);
+
+                self.char_idx = self
+                    .rope
+                    .line_to_char(if go_down { ln + 1 } else { ln - 1 });
             }
         }
     }
@@ -638,7 +687,7 @@ impl TextFile {
 
         match event {
             HistoryEvent::AddChar(_c, idx) => {
-                self.rope.remove(idx .. idx + 1);
+                self.rope.remove(idx..idx + 1);
                 self.char_idx = idx;
             }
             HistoryEvent::RemoveChar(c, idx) => {
@@ -650,22 +699,24 @@ impl TextFile {
                 self.rope.remove(idx..idx + s.len());
                 self.char_idx = idx;
             }
-            HistoryEvent::RemoveString(s, idx ) => {
+            HistoryEvent::RemoveString(s, idx) => {
                 self.rope.insert(idx, &s);
                 let new_idx = idx + s.len();
                 self.char_idx = new_idx;
             }
 
-            HistoryEvent::MoveLine(ln, go_down) => {
-                match go_down {
-                    true => self.apply_event(HistoryEvent::MoveLine(ln + 1, false)),
-                    false => self.apply_event(HistoryEvent::MoveLine(ln - 1, true)),
-                }
-            }
+            HistoryEvent::MoveLine(ln, go_down) => match go_down {
+                true => self.apply_event(HistoryEvent::MoveLine(ln + 1, false)),
+                false => self.apply_event(HistoryEvent::MoveLine(ln - 1, true)),
+            },
         }
 
         self.history_idx -= 1;
-        self.dirty_changes = Some(self.dirty_changes.and_then(|d| d.checked_sub(1)).unwrap_or(0));
+        self.dirty_changes = Some(
+            self.dirty_changes
+                .and_then(|d| d.checked_sub(1))
+                .unwrap_or(0),
+        );
     }
 
     pub fn redo_event(&mut self) {

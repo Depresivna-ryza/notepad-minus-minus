@@ -1,8 +1,7 @@
-
 use dioxus::prelude::*;
 use dioxus_heroicons::{mini::Shape, Icon};
 
-use crate::models::tabs::{Tabs, Tab};
+use crate::models::tabs::{Tab, Tabs};
 
 #[component]
 pub fn EditorTabs(tabs: Signal<Tabs>) -> Element {
@@ -12,7 +11,7 @@ pub fn EditorTabs(tabs: Signal<Tabs>) -> Element {
 
             for tab in tabs.read().opened_tabs.iter() {
                 TabView { file: tab.clone(), tabs }
-                div {  
+                div {
                     style: "width: 1px; background-color: rgba(73, 173, 255, 0.15); height: 100%;",
                 }
             }
@@ -39,15 +38,14 @@ pub fn TabView(file: ReadOnlySignal<Tab>, tabs: Signal<Tabs>) -> Element {
 
             let path = file().file.path.clone();
             let exists = path.exists();
-            
+
             tabs.write().update_existance(path, exists);
-            
         }
     });
 
     rsx! {
         div {
-            class: "tab".to_string() + 
+            class: "tab".to_string() +
             match is_current() {
                 true => " highlighted",
                 false => " "

@@ -1,16 +1,19 @@
-
-use std::path::PathBuf;
-
-use dioxus::prelude::*;
+use crate::models::file_system::FileSystem;
 use crate::models::file_system::FileSystemItem;
 use crate::views::dialogs::fs_operations::{Operation, OperationDialogHandler};
-use crate::models::file_system::FileSystem;
+use dioxus::prelude::*;
 
 #[derive(Clone)]
 pub struct RightClickMenuHandler {
     is_open: bool,
     position: (f64, f64),
     from_fs_item: Option<FileSystemItem>,
+}
+
+impl Default for RightClickMenuHandler {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl RightClickMenuHandler {
@@ -28,13 +31,13 @@ impl RightClickMenuHandler {
         let coordinates = event.client_coordinates();
         self.position = (coordinates.x, coordinates.y);
     }
-    
+
     pub fn close_menu(&mut self) {
         self.is_open = false;
     }
 
     pub fn is_open(&self) -> bool {
-        return self.is_open;
+        self.is_open
     }
 
     pub fn set_fs_item(&mut self, fs_item: FileSystemItem) {
@@ -68,7 +71,7 @@ pub fn RightClickMenu(fs_item: FileSystemItem) -> Element {
     let create_directory = {
         let path = path.clone();
         let mut operation_dialog_handler = operation_dialog_handler.clone();
-        let mut right_click_menu_state = right_click_menu_state.clone();
+        let mut right_click_menu_state = right_click_menu_state;
 
         move |_| {
             operation_dialog_handler.set_operation(Operation::CreateDirectory);
@@ -80,7 +83,7 @@ pub fn RightClickMenu(fs_item: FileSystemItem) -> Element {
     let create_file = {
         let path = path.clone();
         let mut operation_dialog_handler = operation_dialog_handler.clone();
-        let mut right_click_menu_state = right_click_menu_state.clone();
+        let mut right_click_menu_state = right_click_menu_state;
 
         move |_| {
             operation_dialog_handler.set_operation(Operation::CreateFile);
@@ -92,7 +95,7 @@ pub fn RightClickMenu(fs_item: FileSystemItem) -> Element {
     let delete_dir = {
         let path = path.clone();
         let mut operation_dialog_handler = operation_dialog_handler.clone();
-        let mut right_click_menu_state = right_click_menu_state.clone();
+        let mut right_click_menu_state = right_click_menu_state;
 
         move |_| {
             operation_dialog_handler.set_operation(Operation::DeleteDirectory);
@@ -104,7 +107,7 @@ pub fn RightClickMenu(fs_item: FileSystemItem) -> Element {
     let delete_file = {
         let path = path.clone();
         let mut operation_dialog_handler = operation_dialog_handler.clone();
-        let mut right_click_menu_state = right_click_menu_state.clone();
+        let mut right_click_menu_state = right_click_menu_state;
 
         move |_| {
             operation_dialog_handler.set_operation(Operation::DeleteFile);
@@ -116,7 +119,7 @@ pub fn RightClickMenu(fs_item: FileSystemItem) -> Element {
     let rename = {
         let path = path.clone();
         let mut operation_dialog_handler = operation_dialog_handler.clone();
-        let mut right_click_menu_state = right_click_menu_state.clone();
+        let mut right_click_menu_state = right_click_menu_state;
 
         move |_| {
             operation_dialog_handler.set_operation(Operation::Rename);
@@ -133,7 +136,7 @@ pub fn RightClickMenu(fs_item: FileSystemItem) -> Element {
                 top: {menu_position.1}px;
                 left: {menu_position.0}px;
             ",
-            
+
             onmounted: move |e| async move {
                 let _ = e.data().as_ref().set_focus(true).await;
             },
@@ -153,21 +156,21 @@ pub fn RightClickMenu(fs_item: FileSystemItem) -> Element {
 
                 match fs_item {
                     FileSystemItem::Directory(_) => rsx!(
-                        div { 
+                        div {
                             class: "option-button",
                             onclick: create_directory,
-                            "Create new directory", 
-                        } 
-                        div { 
+                            "Create new directory",
+                        }
+                        div {
                             class: "option-button",
                             onclick: create_file,
-                            "Create new file" 
-                        } 
-                        div { 
+                            "Create new file"
+                        }
+                        div {
                             class: "option-button",
                             onclick: delete_dir,
-                            "Delete" 
-                        } 
+                            "Delete"
+                        }
                     ),
                     FileSystemItem::File(_) => rsx!(
                         div {
@@ -180,8 +183,8 @@ pub fn RightClickMenu(fs_item: FileSystemItem) -> Element {
                 div {
                     class: "option-button",
                     onclick: rename,
-                    "Rename" 
-                } 
+                    "Rename"
+                }
             }
         }
     )

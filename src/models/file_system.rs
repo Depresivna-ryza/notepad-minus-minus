@@ -4,14 +4,16 @@ use std::path::{Path, PathBuf};
 #[derive(Debug, Clone)]
 pub enum FileSystemItem {
     File(PathBuf),
-    Directory(Directory), 
+    Directory(Directory),
 }
 
 impl PartialEq for FileSystemItem {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (FileSystemItem::File(path1), FileSystemItem::File(path2)) => path1 == path2,
-            (FileSystemItem::Directory(dir1), FileSystemItem::Directory(dir2)) => dir1.path == dir2.path,
+            (FileSystemItem::Directory(dir1), FileSystemItem::Directory(dir2)) => {
+                dir1.path == dir2.path
+            }
             _ => false,
         }
     }
@@ -23,14 +25,26 @@ pub struct FileSystem {
     focused_fs_item: Option<PathBuf>,
 }
 
+impl Default for FileSystem {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl FileSystem {
     pub fn new() -> Self {
-        FileSystem { root: None, focused_fs_item: None }
+        FileSystem {
+            root: None,
+            focused_fs_item: None,
+        }
     }
 
     pub fn from(root_path: &Path) -> Self {
         let root_directory = Directory::from(root_path);
-        FileSystem { root: Some(root_directory), focused_fs_item: None }
+        FileSystem {
+            root: Some(root_directory),
+            focused_fs_item: None,
+        }
     }
 
     pub fn get_root(&self) -> Option<&Directory> {
@@ -51,14 +65,14 @@ impl FileSystem {
         None
     }
 
-    pub fn change_focus(&mut self, path: &PathBuf) {
-        self.focused_fs_item = Some(path.clone());
+    pub fn change_focus(&mut self, path: &Path) {
+        self.focused_fs_item = Some(path.to_path_buf());
     }
 
     pub fn clear_focus(&mut self) {
         self.focused_fs_item = None;
     }
-    
+
     pub fn reload(&mut self) {
         if let Some(root) = &mut self.root {
             root.reload_children();
@@ -101,7 +115,6 @@ impl FileSystem {
         }
         Vec::new()
     }
-
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -131,7 +144,7 @@ impl Directory {
             }
         }
     }
-    
+
     pub fn reload_direct_children(&mut self) {
         let mut updated_children = Vec::new();
 
@@ -153,7 +166,7 @@ impl Directory {
         let mut new_children = Vec::new();
 
         for child in self.children.iter() {
-            if updated_children.contains(&child) {
+            if updated_children.contains(child) {
                 new_children.push(child.clone());
             }
         }
@@ -164,9 +177,9 @@ impl Directory {
             }
         }
 
-        self.children = new_children; 
+        self.children = new_children;
     }
-    
+
     fn find_directory_recursive_mut<'a>(&'a mut self, path: &PathBuf) -> Option<&'a mut Directory> {
         if *path == self.path {
             return Some(self);

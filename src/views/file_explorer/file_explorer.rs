@@ -1,10 +1,9 @@
+use crate::models::file_system::FileSystem;
+use crate::models::tabs::Tabs;
+use crate::views::dialogs::fs_operations::{OperationDialog, OperationDialogHandler};
+use crate::views::file_explorer::directory::DirectoryComponent;
 use dioxus::prelude::*;
 use rfd::AsyncFileDialog;
-use crate::views::file_explorer::context_menu::{RightClickMenu, RightClickMenuHandler};
-use crate::views::file_explorer::directory::DirectoryComponent;
-use crate::models::tabs::Tabs;
-use crate::views::dialogs::fs_operations::{OperationDialogHandler, OperationDialog};
-use crate::models::file_system::{FileSystem, FileSystemItem};
 
 use std::time::Duration as duration;
 
@@ -33,7 +32,7 @@ pub fn FileExplorer(tabs: Signal<Tabs>) -> Element {
             class: "file-explorer",
 
             div {
-                style: "display: flex; width: 100%; align-items: center; 
+                style: "display: flex; width: 100%; align-items: center;
                         padding-left: 10px; height: 35px; background-color: rgb(26, 28, 48);",
                 "FileExplorer"
             }
@@ -41,9 +40,9 @@ pub fn FileExplorer(tabs: Signal<Tabs>) -> Element {
             div {
                 style: "height: 1px; background-color: rgb(59, 63, 105); width: 100%;",
             }
-            
+
             div {
-                style: "width: 100%; height: 100%; display: flex; overflow-y: auto; color: white; 
+                style: "width: 100%; height: 100%; display: flex; overflow-y: auto; color: white;
                         font-family: JetBrains Mono; font-size: 14px;",
                 if let Some(directory) = file_system.read().get_root() {
                     DirectoryComponent { path: directory.get_path().clone() }
@@ -55,7 +54,7 @@ pub fn FileExplorer(tabs: Signal<Tabs>) -> Element {
                 }
             }
         }
-        
+
         if operation_dialog_handler.is_operation_set() {
             OperationDialog {}
         }
