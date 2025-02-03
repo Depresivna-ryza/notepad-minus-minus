@@ -29,7 +29,6 @@ async fn launch_sh(shell: String) -> Result<Arc<RwLock<Child>>, std::io::Error> 
 fn TerminalLauncher(terminal_states: Signal<TerminalStates>) -> Element {
     let mut input_text: Signal<String> = use_signal(|| "".to_string());
 
-
     let mut launch = move || {
         let cmd = input_text.read().to_string();
         terminal_states.write().push(TerminalData::new(cmd));
@@ -38,9 +37,9 @@ fn TerminalLauncher(terminal_states: Signal<TerminalStates>) -> Element {
 
     return rsx! {
         div {
-            style: "display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; width: 100%;",
+            class: "terminal-launcher-input",
             input {
-                style: "margin-top: 10px; padding: 10px; border: 1px solid #ccc; border-radius: 5px; width: 80%; max-width: 300px;",
+                style: "margin-top: 10px; padding: 10px; border: 1px solid #555555; border-radius: 5px; width: 80%; max-width: 300px; background-color: #2e2e2e; color: #ffffff;",
                 oninput: move |e| *input_text.write() = e.value(),
                 value: input_text,
                 placeholder: "Enter command to launch terminal (cmd)",
@@ -51,10 +50,8 @@ fn TerminalLauncher(terminal_states: Signal<TerminalStates>) -> Element {
                 }
             }
             button {
-            style: "margin-top: 10px; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;",
-            background_color: HIGHLIGHT_COLOR,
-            color: DEFAULT_COLOR,
-            onclick: move |_| launch(),
+                class: "terminal-launcher-button",
+                onclick: move |_| launch(),
                 "Launch terminal"
             }
         }
@@ -116,6 +113,7 @@ pub fn Terminal() -> Element {
                         color: "white",
                         onclick: move |_| terminal_states.write().active_index = Some(index),
                         Icon {
+                            fill: if terminal_states().active_index.clone() == Some(index) {"black"} else {"rgb(185, 185, 185)"},
                             icon: Shape::CommandLine,
                             size: ICON_SIZE,
                         }
@@ -198,9 +196,9 @@ fn ConcreteTerminal(terminal_states: Signal<TerminalStates>, index: usize) -> El
         return rsx! {
             div {
                 onmounted: move |_| async move { sleep(Duration::from_secs(5)).await; terminal_states.write().remove(index); },
-                style: "display: flex; justify-content: center; align-items: center; height: 100%; width: 100%",
+                class: "terminal-launcher-input",
                 div {
-                    style: "padding: 10px; border-radius: 3px; background-color: white; color: black; font-size: 15px; font-weight: 500; 
+                    style: "padding: 10px; border-radius: 3px; background-color: rgba(255, 185, 185, 0.61); color: black; font-size: 15px; font-weight: 500; 
                         text-align: center;",
                     "Failed to launch terminal with command: \"{terminal_states().states[index].command.clone()}\""
                 }

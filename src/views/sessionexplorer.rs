@@ -4,8 +4,9 @@ use dioxus::prelude::*;
 pub fn SessionsExplorer() -> Element {
     rsx! {
         div {
-            style: "flex: 1; background-color: lightblue;",
-            "SessionsExplorer content"
+            style: "display: flex; flex: 1; background-color: rgb(53, 40, 40);  font-family: JetBrains Mono; font-size: 20px; color: white; 
+                    justify-content: center; align-items: center;",
+                "Sessions"
         }
     }
 }
