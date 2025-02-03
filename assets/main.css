@@ -125,12 +125,12 @@ span {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background-color: white;
-    color: black;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
     z-index: 10;
+
+    background: #1e1e1e;
+    color: white;
+    padding: 20px;
+    
 }
 
 .dialog-content {
@@ -138,6 +138,30 @@ span {
     flex-direction: column;
     align-items: center;
     gap: 10px;
+}
+
+.dialog-button {
+    width: 60px;
+    color: lightyellow;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'JetBrains Mono', monospace;
+    height: 100%;
+    font-size: 15px;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    padding: 10px;
+    margin-top: 10px;
+}
+
+.dialog-button:hover {
+    background-color: rgb(92, 63, 63); 
+}
+
+.dialog-button:active {
+    background-color: rgb(44, 44, 44); 
 }
 
 
@@ -323,6 +347,7 @@ span {
     padding: 10px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     cursor: pointer;
+    height: 40px;
     width: 100%;
     text-overflow: ellipsis; 
     overflow: hidden; 
@@ -373,6 +398,20 @@ span {
     color: #ffffff;
 }
 
+.name-input {
+    font-family: 'JetBrains Mono';
+    margin-top: 10px;
+    padding: 10px;
+    border: 1px solid #555555;
+
+    
+    width: 80%;
+    max-width: 300px;
+    background-color: #2e2e2e;
+    color: #ffffff;
+    outline: none;
+}
+
 .terminal-launcher-input input {
     font-family: 'JetBrains Mono';
     margin-top: 10px;
@@ -401,13 +440,6 @@ span {
     background-color: #4e4e4e;
 }
 
-.dialog-content {
-    display: flex;
-    flex-direction: column;
-    
-    gap: 0px;
-    width: 100%;
-}
 
 .option-button {
     width: 100%;

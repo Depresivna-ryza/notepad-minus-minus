@@ -43,7 +43,7 @@ pub fn Layout() -> Element {
     let shown_panels = ShownPanels::new();
     
     let mut terminal_height = use_signal(|| 200);
-    let mut left_panel_width = use_signal(|| 200);
+    let mut left_panel_width = use_signal(|| 210);
 
     let mut div_element = use_signal(|| None as Option<Rc<MountedData>>);
 
@@ -69,7 +69,7 @@ pub fn Layout() -> Element {
         if *is_left_panel_slider_pressed.read() {
             let mouse_width = event.page_coordinates().x as i32;
             let new_width = mouse_width - 50;
-            if (new_width) < 200 {
+            if (new_width) < 210 {
                 // info!("Left panel too small");
                 return;
             }

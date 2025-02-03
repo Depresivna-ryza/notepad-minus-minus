@@ -17,7 +17,7 @@ pub fn EditHistory(tabs: Signal<Tabs>) -> Element {
                         width: 100%; display: flex; color: white; justify-content: center; align-items: center; font-size: 20px; font-family: JetBrains Mono;",
                 div {
                     style: "display: flex; justify-content: center; align-items: center; color: rgb(204, 204, 204)",
-                    "No file is selected"
+                    "No file selected"
                 }
             }
         }
@@ -65,6 +65,7 @@ pub fn HistoryLine(tabs: Signal<Tabs>, ln: usize, event: HistoryEvent, current_h
     let str = format!("{}", event);
     rsx! {
         div {
+            min_height: "40px",
             class: "history-item".to_string() + 
             match ln == current_history_idx {
                 true => " selected",

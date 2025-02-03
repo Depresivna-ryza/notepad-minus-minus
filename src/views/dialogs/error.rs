@@ -52,8 +52,8 @@ pub fn ErrorDialog() -> Element {
                     class: "dialog-content",
                     p { "An error occurred." }
                     p { { error_dialog_handler.get_message() } }
-                    button { 
-                        class: "cancel-button",
+                    div { 
+                        class: "dialog-button",
                         onclick: close,
                         "Close"
                     }
