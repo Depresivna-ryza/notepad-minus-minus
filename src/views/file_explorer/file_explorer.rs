@@ -61,9 +61,7 @@ pub fn FileExplorer(tabs: Signal<Tabs>) -> Element {
         }
 
         div {
-            style: "width: 100%; display: flex; justify-content: center; padding: 5px; 
-                    cursor: pointer; background-color: rgb(49, 49, 49); color: white; 
-                    font-family: JetBrains Mono;",
+            class: "choose-directory-btn",
             onclick: change_root_directory,
             "Change root directory"
         }
