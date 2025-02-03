@@ -1,9 +1,15 @@
 /* App-wide styling */
-body {
-    background-color: #0f1116;
-    color: #ffffff;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    margin: 0px;
+:root {
+    --background-color: #0f1116;
+    --text-color: #ffffff;
+    --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    --link-color: white;
+    --link-hover-background: rgba(56, 62, 105, 0.2);
+    --link-hover-color: rgb(56, 62, 105);
+    --side-panel-icon-hover-background: rgba(58, 105, 56, 0.2);
+    --side-panel-icon-hover-margin-color: rgb(56, 105, 93);
+    --side-panel-icon-selected-background: rgba(56, 62, 105, 0.4);
+    --side-panel-icon-selected-margin-color: rgb(56, 62, 105);
 }
 
 #hero {
@@ -135,3 +141,209 @@ span {
     scrollbar-width: thin; /* Make the scrollbar thin */
     scrollbar-color: #888 #f1f1f1; /* Color of the scrollbar thumb and track */
 }
+
+.left-panel-slider, .terminal-slider {
+    right: 0;
+    opacity: 0;
+    background: #0099e5;
+    transition: 0.3s ease-in-out 0s, opacity 0.3s ease-in-out 0s;
+}
+
+.terminal-slider {
+    height: 5px;
+    cursor: ns-resize; /* Horizontal resize cursor */
+}
+
+.left-panel-slider {
+    width: 5px;
+    cursor: ew-resize; /* Column resize cursor */
+}
+
+.left-panel-slider:hover, .terminal-slider:hover {
+    opacity: 1;
+  transition: 0.3s ease-in-out 0s, opacity 0.3s ease-in-out .3s;
+}
+
+
+/* Side panel icon styles */
+.side-panel-icon {
+    position: relative; /* Ensure the pseudo-element is positioned relative to the button */
+    border: none;
+    background-color: transparent;
+    cursor: pointer;
+    width: 50px;
+    height: 50px;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.side-panel-icon::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px; /* Width of the colored margin */
+    background-color: transparent; /* Initial background color */
+    transition: background-color 0.3s ease; /* Smooth transition for background color */
+}
+
+.side-panel-icon:hover {
+    background-color: var(--side-panel-icon-hover-background); /* Subtle background color on hover */
+}
+
+.side-panel-icon:hover::before {
+    background-color: var(--side-panel-icon-hover-margin-color); /* Change the margin color to match the background color */
+}
+
+.side-panel-icon.selected {
+    background-color: var(--side-panel-icon-selected-background); /* Background color when selected */
+}
+
+.side-panel-icon.selected::before {
+    background-color: var(--side-panel-icon-selected-margin-color); /* Margin color when selected */
+}
+
+.save-button {
+    width: 60px;
+    color: lightyellow;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: 'JetBrains Mono', monospace;
+    height: 100%;
+    font-size: 15px;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease; /* Smooth transition for background color */
+}
+
+.save-button:hover {
+    background-color: rgb(92, 63, 63); /* Darken background color on hover */
+}
+
+.save-button:active {
+    background-color: rgb(44, 44, 44); /* Darken background color on click */
+}
+
+/* Tab styles */
+.tab {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 12px;
+    min-width: 100px;
+    max-width: 175px;
+    justify-content: space-between;
+    background-color: transparent;
+    color: rgba(255, 255, 255, 0.829);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, color 0.3s ease;
+    height: 100%; 
+    position: relative; 
+    border-radius: 0; 
+}
+
+.tab::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px; /* Height of the colored margin */
+    background-color: transparent; /* Initial background color */
+    transition: background-color 0.3s ease; /* Smooth transition for background color */
+}
+
+.tab:hover {
+    background-color: rgba(255, 255, 255, 0.1); /* Slightly lighter background on hover */
+}
+
+.tab:hover::before {
+    background-color: var(--side-panel-icon-selected-margin-color); /* Highlighted margin color on hover */
+}
+
+.tab.highlighted::before {
+    background-color: var(--side-panel-icon-hover-margin-color); /* Highlighted margin color */
+}
+
+.tab.highlighted {
+    background-color: var(--side-panel-icon-hover-background); /* Highlighted background color */
+}
+
+.tab.non-exists {
+    text-decoration: line-through; /* Cross out text */
+    color: rgba(255, 0, 0, 0.7); /* Red color for deleted files */
+}
+
+@font-face {
+    font-family: 'JetBrains Mono';
+    src: url('https://cdn.jsdelivr.net/gh/JetBrains/JetBrainsMono/web/woff2/JetBrainsMono-Bold-Italic.woff2') format('woff2'),
+      url('https://cdn.jsdelivr.net/gh/JetBrains/JetBrainsMono/web/woff/JetBrainsMono-Bold-Italic.woff') format('woff');
+    font-weight: 700;
+    font-style: italic;
+    font-display: swap;
+  }
+  
+  @font-face {
+    font-family: 'JetBrains Mono';
+    src: url('https://cdn.jsdelivr.net/gh/JetBrains/JetBrainsMono/web/woff2/JetBrainsMono-Bold.woff2') format('woff2'),
+      url('https://cdn.jsdelivr.net/gh/JetBrains/JetBrainsMono/web/woff/JetBrainsMono-Bold.woff') format('woff');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+  }
+  
+  @font-face {
+    font-family: 'JetBrains Mono';
+    src: url('https://cdn.jsdelivr.net/gh/JetBrains/JetBrainsMono/web/woff2/JetBrainsMono-ExtraBold-Italic.woff2') format('woff2'),
+      url('https://cdn.jsdelivr.net/gh/JetBrains/JetBrainsMono/web/woff/JetBrainsMono-ExtraBold-Italic.woff') format('woff');
+    font-weight: 800;
+    font-style: italic;
+    font-display: swap;
+  }
+  
+  @font-face {
+    font-family: 'JetBrains Mono';
+    src: url('https://cdn.jsdelivr.net/gh/JetBrains/JetBrainsMono/web/woff2/JetBrainsMono-ExtraBold.woff2') format('woff2'),
+      url('https://cdn.jsdelivr.net/gh/JetBrains/JetBrainsMono/web/woff/JetBrainsMono-ExtraBold.woff') format('woff');
+    font-weight: 800;
+    font-style: normal;
+    font-display: swap;
+  }
+  
+  @font-face {
+    font-family: 'JetBrains Mono';
+    src: url('https://cdn.jsdelivr.net/gh/JetBrains/JetBrainsMono/web/woff2/JetBrainsMono-Italic.woff2') format('woff2'),
+      url('https://cdn.jsdelivr.net/gh/JetBrains/JetBrainsMono/web/woff/JetBrainsMono-Italic.woff') format('woff');
+    font-weight: 400;
+    font-style: italic;
+    font-display: swap;
+  }
+  
+  @font-face {
+    font-family: 'JetBrains Mono';
+    src: url('https://cdn.jsdelivr.net/gh/JetBrains/JetBrainsMono/web/woff2/JetBrainsMono-Medium-Italic.woff2') format('woff2'),
+      url('https://cdn.jsdelivr.net/gh/JetBrains/JetBrainsMono/web/woff/JetBrainsMono-Medium-Italic.woff') format('woff');
+    font-weight: 500;
+    font-style: italic;
+    font-display: swap;
+  }
+  
+  @font-face {
+    font-family: 'JetBrains Mono';
+    src: url('https://cdn.jsdelivr.net/gh/JetBrains/JetBrainsMono/web/woff2/JetBrainsMono-Medium.woff2') format('woff2'),
+      url('https://cdn.jsdelivr.net/gh/JetBrains/JetBrainsMono/web/woff/JetBrainsMono-Medium.woff') format('woff');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+  }
+  
+  @font-face {
+    font-family: 'JetBrains Mono';
+    src: url('https://cdn.jsdelivr.net/gh/JetBrains/JetBrainsMono/web/woff2/JetBrainsMono-Regular.woff2') format('woff2'),
+      url('https://cdn.jsdelivr.net/gh/JetBrains/JetBrainsMono/web/woff/JetBrainsMono-Regular.woff') format('woff');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+  }
