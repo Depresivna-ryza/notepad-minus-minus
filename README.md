@@ -19,3 +19,19 @@ The application can run a "live share" mode that will create a watch session and
 - Keyboard shortcuts
 - Find
 - (Multiple) Terminal Support
+
+
+
+# Running the application
+
+install Dioxus: 
+```
+> cargo install dioxus-cli
+``` 
+(or follow https://dioxuslabs.com/learn/0.6/getting_started/)
+
+run the application:
+```
+> dx serve -r
+```
+ 
