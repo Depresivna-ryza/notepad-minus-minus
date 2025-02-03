@@ -1,18 +1,19 @@
 use dioxus::prelude::*;
 use rfd::AsyncFileDialog;
+use crate::views::file_explorer::context_menu::{RightClickMenu, RightClickMenuHandler};
 use crate::views::file_explorer::directory::DirectoryComponent;
 use crate::models::tabs::Tabs;
 use crate::views::dialogs::fs_operations::{OperationDialogHandler, OperationDialog};
-use crate::models::file_system::FileSystem;
+use crate::models::file_system::{FileSystem, FileSystemItem};
 
 use std::time::Duration as duration;
 
 #[component]
 pub fn FileExplorer(tabs: Signal<Tabs>) -> Element {
     use_context_provider(|| tabs);
-    let operation_dialog_handler = use_context_provider(|| OperationDialogHandler::new());
+    let operation_dialog_handler = use_context::<OperationDialogHandler>();
 
-    let mut file_system = use_context_provider(|| Signal::new(FileSystem::new()));
+    let mut file_system = use_context::<Signal<FileSystem>>();
 
     let change_root_directory = move |_| async move {
         if let Some(dir_path) = AsyncFileDialog::new().pick_folder().await {
@@ -54,7 +55,7 @@ pub fn FileExplorer(tabs: Signal<Tabs>) -> Element {
                     }
                 }
             }
-
+        
         if operation_dialog_handler.is_operation_set() {
             OperationDialog {}
         }

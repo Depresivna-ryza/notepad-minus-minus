@@ -8,7 +8,7 @@ use crate::views::file_explorer::{
 
 #[component]
 pub fn DirectoryComponent(path: PathBuf) -> Element {
-    let mut right_click_menu_handler = use_context_provider(|| RightClickMenuHandler::new());
+    let mut right_click_menu_handler = use_context::<Signal<RightClickMenuHandler>>();
     let mut file_system = use_context::<Signal<FileSystem>>();
 
     let opened_string = if file_system.read().directory_is_opened(&path) {
@@ -45,7 +45,8 @@ pub fn DirectoryComponent(path: PathBuf) -> Element {
         let path = path.clone();
 
         move |event: MouseEvent| {
-            right_click_menu_handler.handle_right_click(event);
+            right_click_menu_handler.write().set_fs_item(FileSystemItem::Directory(Directory::from(&path)));
+            right_click_menu_handler.write().handle_right_click(event);
             file_system.write().change_focus(&path);
         }
     };
@@ -70,9 +71,6 @@ pub fn DirectoryComponent(path: PathBuf) -> Element {
                 }
             }
 
-            if right_click_menu_handler.is_open() {
-                RightClickMenu { fs_item: FileSystemItem::Directory(Directory::from(&path.clone())) }
-            }
             div {
                 style: " border-left: 1px solid rgb(131, 58, 58); margin-left: 10px; ",
                 if file_system.read().directory_is_opened(&path) {
