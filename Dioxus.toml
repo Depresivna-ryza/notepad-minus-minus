@@ -2,6 +2,7 @@
 
 # App (Project) Name
 name = "notepad-minus-minus"
+icon = ["assets/favicon.ico"]
 
 [web.app]
 
