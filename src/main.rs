@@ -5,7 +5,6 @@ pub mod views;
 use std::rc::Rc;
 use dioxus::desktop::window;
 use models::panels::ShownPanels;
-use futures::FutureExt;
 use models::tabs::Tabs;
 use tracing::info;
 use views::{edit_history::EditHistory, find_replace::FindReplace};
