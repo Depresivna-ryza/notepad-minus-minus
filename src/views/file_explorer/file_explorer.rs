@@ -31,24 +31,40 @@ pub fn FileExplorer(tabs: Signal<Tabs>) -> Element {
         div {
             class: "file-explorer",
 
-            a {"FileExplorer"}
-
-            button {
-                onclick: change_root_directory,
-                "Change root directory"
+            div {
+                style: "display: flex; width: 100%; align-items: center; 
+                        padding-left: 10px; height: 35px; background-color: rgb(26, 28, 48);",
+                "FileExplorer"
             }
 
-            if let Some(directory) = file_system.read().get_root() {
-                DirectoryComponent { path: directory.get_path().clone() }
-            } else {
-                div {
-                    "No directory selected"
+            div {
+                style: "height: 1px; background-color: rgb(59, 63, 105); width: 100%;",
+            }
+            
+            div {
+                style: "width: 100%; height: 100%; display: flex; overflow-y: auto; color: white; 
+                        font-family: JetBrains Mono; font-size: 14px;",
+                if let Some(directory) = file_system.read().get_root() {
+                    DirectoryComponent { path: directory.get_path().clone() }
+                } else {
+                        div {
+                            style: "width: 100%; height: 100%; display: flex; justify-content: center; align-items: center;",
+                            "No directory selected"
+                        }
+                    }
                 }
             }
-        }
 
         if operation_dialog_handler.is_operation_set() {
             OperationDialog {}
+        }
+
+        div {
+            style: "width: 100%; display: flex; justify-content: center; padding: 5px; 
+                    cursor: pointer; background-color: rgb(49, 49, 49); color: white; 
+                    font-family: JetBrains Mono;",
+            onclick: change_root_directory,
+            "Change root directory"
         }
     }
 }

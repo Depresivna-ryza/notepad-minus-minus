@@ -20,13 +20,14 @@ pub fn File(file: PathBuf) -> Element {
     rsx!(
         div {
             class: if state.read().is_focused(&file) {
-                "item-text-selected"
+                "item-text selected"
             } else {
                 "item-text"
             },
+            style: "backgorund-color: red;",
             
             ondoubleclick: move |_| {
-                info!("File clicked: {:?}", file.clone());
+                // info!("File clicked: {:?}", file.clone());
 
                 let mut tabs = use_context::<Signal<Tabs>>();
                 tabs.write().open_tab(file1.clone());
@@ -42,7 +43,7 @@ pub fn File(file: PathBuf) -> Element {
                 state.write().change_focus(&file3);
             },
             
-            " {file_name}"
+            "                {file_name}"
         }
         
         if right_click_menu_handler.is_open() {
