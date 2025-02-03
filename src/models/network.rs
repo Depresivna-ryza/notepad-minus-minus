@@ -11,7 +11,7 @@ use tracing::info;
 /// P2PNetwork handles libp2p networking logic.
 
 pub struct P2PNetwork {
-    local_peer_id: PeerId,
+    // local_peer_id: PeerId,
     pub swarm: Swarm<Floodsub>,
     discovered_peers: HashSet<PeerId>,
 }
@@ -48,7 +48,7 @@ impl P2PNetwork {
         // let (message_sender, message_receiver) = mpsc::unbounded_channel();
 
         let network = Self {
-            local_peer_id,
+            // local_peer_id,
             swarm,
             discovered_peers: HashSet::new(),
         };
@@ -68,35 +68,35 @@ impl P2PNetwork {
             match self.swarm.select_next_some().await {
                 SwarmEvent::Dialing {
                     peer_id,
-                    connection_id,
+                    connection_id: _,
                 } => {
                     print!("Dialed by peer {:?}", peer_id);
                 }
                 SwarmEvent::IncomingConnection {
-                    connection_id,
-                    local_addr,
-                    send_back_addr,
+                    connection_id: _,
+                    local_addr: _,
+                    send_back_addr: _,
                 } => {
                     println!("Incoming ")
                 }
                 SwarmEvent::ConnectionEstablished {
                     peer_id,
-                    connection_id,
-                    endpoint,
-                    num_established,
-                    concurrent_dial_errors,
-                    established_in,
+                    connection_id: _,
+                    endpoint: _,
+                    num_established: _,
+                    concurrent_dial_errors: _,
+                    established_in: _,
                 } => {
                     println!("Connection came from {} ", peer_id);
                 }
                 SwarmEvent::Behaviour(FloodsubEvent::Message(message)) => {
                     println!("Received message: {:?}", message);
                 }
-                SwarmEvent::Behaviour(FloodsubEvent::Subscribed { peer_id, topic }) => {
+                SwarmEvent::Behaviour(FloodsubEvent::Subscribed { peer_id, topic: _,}) => {
                     self.discovered_peers.insert(peer_id);
                     println!("Connected to peer: {peer_id}");
                 }
-                SwarmEvent::Behaviour(FloodsubEvent::Unsubscribed { peer_id, topic }) => {
+                SwarmEvent::Behaviour(FloodsubEvent::Unsubscribed { peer_id, topic: _,}) => {
                     self.discovered_peers.remove(&peer_id);
                     println!("Disconnected from peer: {peer_id}");
                 }

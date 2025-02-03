@@ -182,13 +182,13 @@ pub fn Editor(tabs: Signal<Tabs>) -> Element {
 
                     (_,_,_,_) => {}
                 }
-
             },
-
-            style: "display: flex; flex-direction: column; flex: 1; justify-content: space-between; height: 10px;",
+            style: "display: flex; flex-direction: column; flex: 1; overflow: hidden",
             TopStatusBar {tabs},
+            div {
+                style: "height: 2px; background-color: rgb(90, 89, 75); width: 100%; align-self: center;",
+            }
             EditorText {tabs, 
-                // text,
                  caret_col: caret_col(), caret_line: caret_line()},
             BottomStatusBar {tabs, caret_col: caret_col(), caret_line: caret_line(), char_idx: text.read().clone().map_or(0, |t| t.char_idx)},
         }
@@ -198,15 +198,18 @@ pub fn Editor(tabs: Signal<Tabs>) -> Element {
 #[component]
 pub fn EditorText(
     tabs: Signal<Tabs>,
-    // text: Memo<Option<TextFile>>,
     caret_col: usize,
     caret_line: usize,
 ) -> Element {
     let Some(ref text) = tabs.read().get_current_file() else {
         return rsx! {
             div {
-                style: "background-color: purple; flex: 1; color: red;",
-                "<NO FILE>"
+                style: "background-color: rgb(24, 24, 24); display: flex; overflow-y: scroll;
+                        flex: 1; flex-direction: column; color: white; position: relative; justify-content: center; align-items: center;",
+                div {
+                    style: "color: gray; font-size: 20px; font-family: JetBrains Mono;",
+                    "No file is selected"
+                }
             }
         };
     };
@@ -220,7 +223,7 @@ pub fn EditorText(
                 element.set(Some(e.data()));
             },
 
-            style: "background-color: purple; display: flex; overflow-y: scroll; flex: 1; flex-direction: column",
+            style: "background-color: rgb(45, 47, 53); display: flex; overflow-y: scroll; flex: 1; flex-direction: column",
             for (i, line) in text.chars().into_iter().enumerate() {
                 
                 EditorLine {
@@ -283,32 +286,28 @@ pub fn EditorLine(
     rsx! {
         div {
             onmounted: move |e| {
-                info!("mounted line: {:?}", e);
                 element.set(Some(e.data()));
             },
 
-            style: match line_i == caret_line() {
-                true => "display: flex; flex-direction: row; background-color: gray;",
-                false => "display: flex; flex-direction: row;"
-            }.to_string() + "font-family: monospace; font-size: 16px; white-space: pre ",
-            
+            style: "display: flex; flex-direction: row; font-family: JetBrains Mono; 
+                    font-size: 16px; white-space: pre; color: white; padding: 0 10px;",
+            background_color: if line_i == caret_line() { "rgb(65, 65, 65)" } else { "" },
             span {
-                style: "padding-right: 10px; min-width: 30px; background-color: darkblue;",
+                style: "padding-right: 10px; min-width: 40px;",
+                color: if line_i == caret_line() { "rgb(150, 111, 40)" } else { "rgb(85, 85, 85)" },
                 "{line_i}"
             }
 
             for (i, c) in content.chars().into_iter().map(|c| if c.clone() != '\n' { c.clone()} else {' '}).enumerate() {
                 span {
                     onclick: move |e| {
-                        info!("clicked on line: {:?}, col: {:?}, char: {}", line_i, i, c);
+                        // info!("clicked on line: {:?}, col: {:?}, char: {}", line_i, i, c);
                         let selection = e.modifiers().contains(Modifiers::SHIFT);
                         tabs.write().get_current_file_mut().map(|file| file.set_caret_position(line_i, i, selection));
                     },
 
                     style:
-                        if i == caret_col && line_i == caret_line() {
-                            "; background-color: yellow;"
-                        } else if let (Some(start), Some(end)) = (selection_start, selection_end) {
+                        if let (Some(start), Some(end)) = (selection_start, selection_end) {
                             if (start.ln < line_i && line_i < end.ln ) || 
                                 (start.ln == line_i && line_i == end.ln && start.col <= i && i <= end.col) ||
                                 (start.ln == line_i && line_i < end.ln && start.col <= i) ||
@@ -317,6 +316,8 @@ pub fn EditorLine(
                             } else {
                                 ""
                             }
+                        } else if i == caret_col && line_i == caret_line() {
+                            "; background-color: #756336;"
                         } else {
                             ""
                         },
@@ -344,14 +345,18 @@ pub fn TopStatusBar(tabs: Signal<Tabs>) -> Element {
    
     rsx! {
         div {
-            style: "background-color: blue; height: 40px; display: flex; justify-content: space-between; align-items: center; ",
+            style: "background-color: rgb(54, 46, 46); height: 30px; display: flex; 
+                    justify-content: space-between; align-items: center",
             Breadcrumbs {path},
-            button {
+            div { 
+                style: "height: 100%; width: 1px; background-color: rgb(90, 89, 75);",
+            }
+            div {
+                class: "save-button",
                 onclick: move |_| {
                     tabs.write().get_current_file_mut().map(|file| file.save_to_file());
                 },
-
-                style: "margin-right: 10px; flex-shrink: 0;",
+                
                 "Save"
             }
         }
@@ -384,9 +389,11 @@ pub fn BottomStatusBar(
 
     rsx! {
         div {
-            style: "background-color: blue; height: 30px; display: flex; justify-content: flex-end; align-items: center;",
+            style: "background-color: rgb(40, 42, 53); height: 30px; display: flex; 
+                    justify-content: flex-end; align-items: center; color: rgb(198, 208, 235); 
+                    font-family: JetBrains Mono; font-size: 14px;",
             span {
-                style: "margin-right: 10px;",
+                style: "margin-left: 10px;",
                 "{status}"
             }
             
@@ -395,7 +402,7 @@ pub fn BottomStatusBar(
             }
 
             span {
-                style: "margin-left: 10px;",
+                style: "margin-right: 10px;",
                 "Line: {caret_line}, Col: {caret_col} | Char: {char_idx}"
             }
         }
@@ -407,8 +414,13 @@ pub fn Breadcrumbs(path: ReadOnlySignal<Option<Vec<String>>>) -> Element {
     let Some(path) = path() else {
         return rsx! {
             div {
-                style: "background-color: green; height: 100%; display: flex; flex: 1; overflow-x: auto; white-space: nowrap;",
-                "<No file selected>"
+                style: "display: flex; overflow-x: auto;
+                        flex: 1; flex-direction: column; color: white; justify-content: center;
+                        width: 100%; height: 100%;",
+                div {
+                    style: "color: gray; font-size: 15px; font-family: JetBrains Mono;",
+                    "No file is selected"
+                }
             }
         };
     };
@@ -416,7 +428,8 @@ pub fn Breadcrumbs(path: ReadOnlySignal<Option<Vec<String>>>) -> Element {
     rsx! {
         div {
             class: "scrollbar-thin",
-            style: "background-color: green; height: 100%; display: flex; flex: 1; overflow-x: auto; white-space: nowrap",
+            style: "display: flex; overflow-x: auto; flex: 1; color: white; align-items: center;
+                        width: 100%; height: 100%; font-family: JetBrains Mono; font-size: 12px; margin-left: 5px;",
             for (i, part) in path.iter().enumerate() {
                 span {
                     style: if i == path.len() - 1 {
@@ -429,7 +442,7 @@ pub fn Breadcrumbs(path: ReadOnlySignal<Option<Vec<String>>>) -> Element {
 
                 if i < path.len() - 1 {
                     span {
-                        style: "color: yellow; margin: 0 5px;",
+                        style: "color: orange; margin: 0 5px;",
                         ">"
                     }
                 }

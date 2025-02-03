@@ -1,7 +1,5 @@
 use std::{cmp::{max, min}, fs::read_to_string, path::PathBuf};
 
-use itertools::Itertools;
-
 use super::historyevent::HistoryEvent;
 use ropey::Rope;
 
@@ -260,7 +258,7 @@ impl TextFile {
             return;
         }
 
-        let Some(line) = self.rope.get_line(caret.ln) else {
+        let Some(_line) = self.rope.get_line(caret.ln) else {
             return;
         };
 
@@ -311,7 +309,7 @@ impl TextFile {
 
     pub fn set_selection(&mut self, selection: bool, old_idx: usize) {
         match (selection, self.selection) {
-            (true, Some((start, end))) if self.char_idx == start => {
+            (true, Some((start, _end))) if self.char_idx == start => {
                 self.selection = None;
             }
 

@@ -1,7 +1,6 @@
-use std::path::PathBuf;
 
-use dioxus::{html::g::strikethrough_thickness, prelude::*};
-use tracing::info;
+use dioxus::prelude::*;
+use dioxus_heroicons::{mini::Shape, Icon};
 
 use crate::models::tabs::{Tabs, Tab};
 
@@ -9,10 +8,13 @@ use crate::models::tabs::{Tabs, Tab};
 pub fn EditorTabs(tabs: Signal<Tabs>) -> Element {
     rsx! {
         div {
-            style: "background-color: pink; height: 70px; display: flex; overflow-x: auto;",
+            style: "background-color: rgb(36, 24, 32); height: 40px; display: flex; overflow-x: auto;",
 
             for tab in tabs.read().opened_tabs.iter() {
                 TabView { file: tab.clone(), tabs }
+                div {  
+                    style: "width: 1px; background-color: rgba(73, 173, 255, 0.15); height: 100%;",
+                }
             }
         }
     }
@@ -24,7 +26,7 @@ pub fn TabView(file: ReadOnlySignal<Tab>, tabs: Signal<Tabs>) -> Element {
         None => "Invalid file".to_string(),
         Some(f) => match f.to_str() {
             None => "Invalid file".to_string(),
-            Some(s) => s.chars().take(10).collect::<String>(),
+            Some(s) => s.chars().collect::<String>(),
         },
     });
 
@@ -45,34 +47,35 @@ pub fn TabView(file: ReadOnlySignal<Tab>, tabs: Signal<Tabs>) -> Element {
 
     rsx! {
         div {
-            style: "min-width: 300px; border: 3px solid blue; margin: 1px; padding: 5px;".to_string() + 
-
+            class: "tab".to_string() + 
             match is_current() {
-                true => "background-color: yellow; color: black;",
-                false => ""
+                true => " highlighted",
+                false => " "
             } +
 
             match exists() {
                 true => "",
-                false => "color: red; font-weight: bold; font-style: italic; text-decoration: line-through; text-decoration-style: wavy",
+                false => " non-exists",
             },
-
             onclick: move |_| {
                 tabs.write().set_current_file(file().file.path);
-                info!("current file changed to: {:?}", file().file.path);
+                // info!("current file changed to: {:?}", file().file.path);
             },
-
-            a {
+            div {
+                style: "width: 100%; height: 100%; display: flex; overflow: hidden; align-items: center; white-space: nowrap;",
                 "{file_name_short}"
             }
 
-            button {
-                style: "margin-left: 5px;",
+            div {
+                style: "margin-left: 5px; width: 20px; height: 20px; display: flex; justify-content: center; align-items: center;",
                 onclick: move |_| {
                     tabs.write().close_tab(file().file.path);
-                    info!("tab closed: {:?}", file().file.path);
+                    // info!("tab closed: {:?}", file().file.path);
                 },
-                "X"
+                Icon {
+                    size: 20,
+                    icon: Shape::XMark
+                }
             }
         }
     }

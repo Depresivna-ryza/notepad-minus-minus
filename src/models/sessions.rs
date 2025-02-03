@@ -68,13 +68,13 @@ impl Sessions {
                     .subscribe(Topic::new("notepad"));
                 loop {
                     let mut multiaddr = addr.parse::<Multiaddr>().unwrap();
-                    if let Protocol::P2p(peerId) = multiaddr.pop().expect("Valid peer Id") {
+                    if let Protocol::P2p(_peer_id) = multiaddr.pop().expect("Valid peer Id") {
                         match network.swarm.dial(multiaddr.clone()) {
                             Ok(_) => {
                                 print!("Dial of {} succesfull.", multiaddr);
                             }
-                            Err(dealError) => {
-                                print!("Dial of {} was with error {}.", multiaddr, dealError);
+                            Err(deal_error) => {
+                                print!("Dial of {} was with error {}.", multiaddr, deal_error);
                             }
                         };
 
@@ -92,7 +92,7 @@ impl Sessions {
                     .swarm
                     .behaviour_mut()
                     .subscribe(Topic::new("notepad"));
-                network.run().await;
+                let _ = network.run().await;
                 network
                     .swarm
                     .behaviour_mut()
@@ -126,7 +126,7 @@ impl Sessions {
         self.is_host = false;
     }
 
-    pub fn join_session_from_addr(&mut self, addr: String) {
+    pub fn join_session_from_addr(&mut self, _addr: String) {
         self.is_host = false;
     }
 

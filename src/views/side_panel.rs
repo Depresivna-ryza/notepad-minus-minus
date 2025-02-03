@@ -1,16 +1,24 @@
 use dioxus::prelude::*;
-use dioxus_heroicons::{mini::Shape, IconButton};
+use dioxus_heroicons::{mini::Shape, Icon};
 
 use crate::models::panels::ShownPanels;
 
 #[component]
-pub fn SidePanelIcon(title: String, icon: Shape, on_click: Callback<(), ()>) -> Element {
+pub fn SidePanelIcon(title: String, icon: Shape, on_click: Callback<(), ()>, selected: bool) -> Element {
     rsx! {
-        IconButton {
-            icon: icon,
-            size: 35,
+        button {
+            class: "side-panel-icon".to_string() + if selected { " selected" } else { "" },
+            fill: "red",
             title: title,
             onclick: move |_| on_click(()),
+            Icon {
+                fill: "rgb(183, 188, 255)",
+                size: 30,
+                icon: icon,
+            }
+        }
+        div {
+            style: "height: 1px; background-color: rgb(26, 28, 48); width: 100%; align-self: center;",
         }
     }
 }
@@ -20,7 +28,7 @@ pub fn SidePanel(shown_panels: ShownPanels) -> Element {
 
     rsx! {
         div {
-            style: "display: flex; flex-direction: column; width: 50px; background-color: #eee;",
+            style: "display: flex; flex-direction: column; width: 50px; background-color: rgb(15, 16, 24);",
             SidePanelIcon { 
                 title: "FileTree".to_string(),
                 icon: Shape::Folder,
@@ -29,7 +37,8 @@ pub fn SidePanel(shown_panels: ShownPanels) -> Element {
                     let val = *shown_panels.file_tree.read();
                     shown_panels.file_tree.set(!val);
                     dbg!(shown_panels.file_tree.peek());
-                }
+                },
+                selected: shown_panels.file_tree.read().clone()
             },
             SidePanelIcon { 
                 title: "Sessions".to_string(), 
@@ -39,7 +48,8 @@ pub fn SidePanel(shown_panels: ShownPanels) -> Element {
                     let val = *shown_panels.sessions.read();
                     shown_panels.sessions.set(!val);
                     dbg!(shown_panels.sessions.peek());
-                }
+                },
+                selected: shown_panels.sessions.read().clone()
             },
             SidePanelIcon { 
                 title: "Search".to_string(),
@@ -49,7 +59,8 @@ pub fn SidePanel(shown_panels: ShownPanels) -> Element {
                     let val = *shown_panels.search.read();
                     shown_panels.search.set(!val);
                     dbg!(shown_panels.search.peek());
-                }
+                },
+                selected: shown_panels.search.read().clone()
             },
             SidePanelIcon { 
                 title: "History".to_string(), 
@@ -59,7 +70,8 @@ pub fn SidePanel(shown_panels: ShownPanels) -> Element {
                     let val = *shown_panels.history.read();
                     shown_panels.history.set(!val);
                     dbg!(shown_panels.history.peek());
-                }
+                },
+                selected: shown_panels.history.read().clone()
             },
             SidePanelIcon { 
                 title: "Terminal".to_string(), 
@@ -70,7 +82,8 @@ pub fn SidePanel(shown_panels: ShownPanels) -> Element {
                     shown_panels.terminal.set(!val);
                     println!("Terminal value: {}", shown_panels.terminal.peek());
                     dbg!(shown_panels.terminal.peek());
-                }
+                },
+                selected: shown_panels.terminal.read().clone()
             },
         }
     }
