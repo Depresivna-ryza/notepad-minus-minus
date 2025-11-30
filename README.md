@@ -2,15 +2,14 @@
 
 ## A text editor with additional features developed in Rust
 
-https://github.com/user-attachments/assets/a2ca1de7-2330-45e1-b1d7-6d15ac586ff9
+https://github.com/user-attachments/assets/22fc5f11-5ac9-48db-aa66-fb47db472f16
 
 
-
-https://github.com/user-attachments/assets/7ac02b67-6460-4a61-81df-69d871cdd611
-
+https://github.com/user-attachments/assets/bc60a448-5937-4c30-b8be-c10d2c2a7d03
 
 
-https://github.com/user-attachments/assets/56763fc2-9433-4fdb-b646-92292afcf72c
+https://github.com/user-attachments/assets/136f90bd-aa58-4f9c-868a-a08a1acd5ecd
+
 
 
 ### Main description
